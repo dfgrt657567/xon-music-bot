@@ -33,9 +33,9 @@ def get_ffmpeg_executable():
 FFMPEG_PATH = get_ffmpeg_executable()
 print(f"[+] Using FFmpeg: {FFMPEG_PATH}")
 
-# Modern yt-dlp configuration with Remote EJS challenge solver to completely bypass YouTube "Sign in to confirm you're not a bot"
+# Modern yt-dlp configuration that forces android_creator and skips web clients to completely bypass YouTube's "Sign in to confirm you're not a bot"
 ytdl_format_options = {
-    'format': 'm4a/bestaudio/best',
+    'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
     'noplaylist': True,
@@ -48,11 +48,10 @@ ytdl_format_options = {
     'source_address': '0.0.0.0',
     'extractor_args': {
         'youtube': {
-            'player_client': ['android', 'web_embedded', 'mweb']
+            'player_client': ['android_creator', 'android', 'ios'],
+            'player_skip': ['web', 'web_creator', 'mweb', 'tv_embedded']
         }
-    },
-    'remote_components': ['ejs:github'],
-    'js_runtimes': {'node': {}}
+    }
 }
 
 ffmpeg_options = {
@@ -87,8 +86,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
         duration_parts = []
         if days > 0:
             duration_parts.append(f"{days}d")
-        if hours > 0:
-            duration_parts.append(f"{hours}h")
         if minutes > 0:
             duration_parts.append(f"{minutes}m")
         duration_parts.append(f"{seconds}s")
@@ -103,11 +100,20 @@ class YTDLSource(discord.PCMVolumeTransformer):
         else:
             query = search
 
+        data = None
+        # Primary extraction attempt
         try:
             partial_extract = functools.partial(ytdl.extract_info, query, download=False)
             data = await loop.run_in_executor(None, partial_extract)
-        except Exception as e:
-            raise YTDLError(f"Extraction error: {e}")
+        except Exception as primary_err:
+            # Fallback to SoundCloud or secondary search if YouTube enforces restrictive IP limits
+            print(f"[!] Primary extraction failed ({primary_err}), trying fallback...")
+            try:
+                fallback_query = f"scsearch1:{search}" if not search.startswith(('http://', 'https://')) else search
+                partial_fb = functools.partial(ytdl.extract_info, fallback_query, download=False)
+                data = await loop.run_in_executor(None, partial_fb)
+            except Exception as fb_err:
+                raise YTDLError(f"Gaana load nahi ho paya: `{primary_err}`")
 
         if data is None:
             raise YTDLError(f"Koi gaana nahi mila: `{search}`")
