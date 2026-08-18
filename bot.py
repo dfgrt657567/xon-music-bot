@@ -96,6 +96,28 @@ async def on_ready():
     )
     await bot.change_presence(status=discord.Status.online, activity=activity)
 
+    # BUG-06 FIX: Anti-sleep keep-alive (works locally too for dev testing)
+    bot.loop.create_task(_anti_sleep_keepalive())
+
+
+async def _anti_sleep_keepalive():
+    """Ping Render URL every 8 min to prevent free-tier sleep."""
+    await bot.wait_until_ready()
+    import urllib.request
+    render_url = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("KEEP_ALIVE_URL", "")
+    if not render_url:
+        print("[*] Anti-Sleep: No RENDER_EXTERNAL_URL set, skipping keep-alive.")
+        return
+    print(f"[+] Anti-Sleep Keep-Alive active: pinging {render_url} every 8 min")
+    while not bot.is_closed():
+        await asyncio.sleep(480)
+        try:
+            req = urllib.request.Request(render_url, headers={'User-Agent': 'XONMusic-KeepAlive/2.0'})
+            with urllib.request.urlopen(req, timeout=10) as res:
+                print(f"[+] Keep-Alive Heartbeat: HTTP {res.status} OK")
+        except Exception as e:
+            print(f"[!] Keep-Alive ping failed: {e}")
+
 
 @bot.event
 async def on_command_error(ctx, error):

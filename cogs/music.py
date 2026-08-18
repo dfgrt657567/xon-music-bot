@@ -75,7 +75,8 @@ ytdl_fallback = youtube_dl.YoutubeDL({
 def get_youtube_video_id(search: str):
     """Extract 11-char YouTube video ID from any link or raw ID."""
     clean = search.strip()
-    if re.fullmatch(r'[a-zA-Z0-9_-]{11}', clean):
+    # BUG-05 FIX: Only match bare 11-char IDs when input looks exactly like a YouTube ID (no spaces/common words)
+    if re.fullmatch(r'[a-zA-Z0-9_-]{11}', clean) and not re.search(r'[aeiou]{3,}', clean, re.IGNORECASE):
         return clean
     yt_match = re.search(r'(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([a-zA-Z0-9_-]{11})', clean)
     if yt_match:
@@ -128,6 +129,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
     @staticmethod
     def parse_duration(duration: int) -> str:
+        # BUG-01 FIX: Correct hours/minutes/seconds calculation
         minutes, seconds = divmod(duration, 60)
         hours, minutes = divmod(minutes, 60)
         days, hours = divmod(hours, 24)
@@ -135,8 +137,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         duration_parts = []
         if days > 0:
             duration_parts.append(f"{days}d")
-        if minutes > 0:
-            duration_parts.append(f"{minutes}h")
+        if hours > 0:                                    # was checking 'minutes' twice — fixed to 'hours'
+            duration_parts.append(f"{hours}h")
         if minutes > 0:
             duration_parts.append(f"{minutes}m")
         duration_parts.append(f"{seconds}s")
@@ -239,9 +241,23 @@ class GuildMusicPlayer:
             self.next.clear()
 
             try:
-                # If 24/7 mode is on, wait forever. Else, disconnect after 3 mins of idle inactivity.
+                # BUG-04 FIX: In 24/7 mode, periodically check if vc is still alive (prevent zombie loop)
                 if self.mode_247:
-                    song = await self.queue.get()
+                    while True:
+                        try:
+                            async with asyncio.timeout(30):
+                                song = await self.queue.get()
+                            break  # got a song, proceed
+                        except asyncio.TimeoutError:
+                            # Check if voice client is still connected — reconnect if dropped
+                            vc = self.guild.voice_client
+                            if not vc or not vc.is_connected():
+                                try:
+                                    await self.channel.send("⚠️ Voice connection drop hua! `/join` karke wapas connect karein.")
+                                except Exception:
+                                    pass
+                                await self.destroy(self.guild)
+                                return
                 else:
                     async with asyncio.timeout(180):
                         song = await self.queue.get()
@@ -294,6 +310,12 @@ class GuildMusicPlayer:
             self.current = None
 
     async def destroy(self, guild):
+        # BUG-02 FIX: Properly disconnect voice client before cleanup
+        try:
+            if guild.voice_client:
+                await guild.voice_client.disconnect(force=True)
+        except Exception:
+            pass
         return self.cog.cleanup(guild)
 
 
@@ -367,7 +389,8 @@ class Music(commands.Cog):
 
         song = Song(source)
 
-        if vc.is_playing() or not player.queue.empty():
+        # BUG-03 FIX: Also check vc.is_paused() so paused bot queues correctly
+        if vc.is_playing() or vc.is_paused() or not player.queue.empty():
             await player.queue.put(song)
             embed = discord.Embed(
                 title="📋 Queue Me Add Ho Gaya",
