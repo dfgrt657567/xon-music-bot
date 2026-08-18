@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XON Music — Premium High-Fidelity Discord Music Bot & Dashboard</title>
+  <meta name="description" content="High-fidelity 24/7 Discord Music Bot with lossless 384kbps audio streaming, DAVE End-to-End Encryption, Server Dashboard & DJ Role Manager.">
+  
+  <!-- Open Graph / Discord Embed Preview Tags -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="XON Music — Premium Discord Music Bot & Web Dashboard">
+  <meta property="og:description" content="Lossless 384kbps audio, 24/7 Uptime, DAVE Voice Encryption, Server Selector & DJ Role Manager. Invite XON Music!">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=1200&auto=format&fit=crop&q=80">
+  <meta name="theme-color" content="#8B5CF6">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+  <!-- Background Glow & Grid Effect -->
+  <div class="bg-noise"></div>
+  <div class="bg-grid"></div>
+  <div class="glow-orb glow-top-left"></div>
+  <div class="glow-orb glow-bottom-right"></div>
+  <div class="glow-orb glow-center"></div>
+
+  <!-- Navigation Bar -->
+  <header class="navbar-wrapper">
+    <nav class="navbar container">
+      <a href="#" class="nav-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-compact-disc fa-spin-pulse"></i>
+        </div>
+        <span class="brand-name">XON<span class="gradient-text">Music</span></span>
+        <span class="badge-tag">OFFICIAL PRO</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#servers" class="nav-link"><i class="fa-solid fa-server"></i> My Servers</a>
+        <a href="#roles" class="nav-link"><i class="fa-solid fa-shield-halved"></i> DJ Roles</a>
+        <a href="#player" class="nav-link"><i class="fa-solid fa-play"></i> Web Player</a>
+        <a href="#commands" class="nav-link"><i class="fa-solid fa-terminal"></i> Commands</a>
+      </div>
+
+      <div class="nav-actions">
+        <a id="navInviteBtn" href="https://discord.com/oauth2/authorize?client_id=1539145323048599625&permissions=8&scope=bot%20applications.commands" target="_blank" class="btn btn-secondary">
+          <i class="fa-solid fa-plus"></i> Invite Bot
+        </a>
+        <button id="discordLoginBtn" class="btn btn-discord btn-glow">
+          <i class="fa-brands fa-discord"></i> <span id="loginBtnText">Login with Discord</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section container">
+      <div class="hero-content">
+        <div class="hero-pill">
+          <span class="pill-dot"></span>
+          <span>DAVE E2EE Protected • Server DJ Roles • 384kbps Hi-Fi Audio</span>
+        </div>
+        <h1 class="hero-title">
+          Elevate Your Server with <span class="gradient-text-alt">XON Music</span>
+        </h1>
+        <p class="hero-subtitle">
+          Next-generation music streaming on Discord with zero lag. Login with Discord to manage your servers, set custom DJ role permissions, and stream directly from the web dashboard.
+        </p>
+
+        <div class="hero-cta-group">
+          <a id="heroInviteBtn" href="https://discord.com/oauth2/authorize?client_id=1539145323048599625&permissions=8&scope=bot%20applications.commands" target="_blank" class="btn btn-primary btn-glow">
+            <i class="fa-brands fa-discord"></i> Add to Discord — Free
+          </a>
+          <a href="#servers" class="btn btn-glass">
+            <i class="fa-solid fa-server"></i> Manage My Servers
+          </a>
+        </div>
+
+        <!-- Live Server Counters -->
+        <div class="stats-ribbon">
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-server"></i></div>
+            <div class="stat-info">
+              <span class="stat-number" id="serverCount">1,850+</span>
+              <span class="stat-label">Active Servers</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+            <div class="stat-info">
+              <span class="stat-number" id="userCount">420,000+</span>
+              <span class="stat-label">Listeners</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-gauge-high"></i></div>
+            <div class="stat-info">
+              <span class="stat-number" id="pingValue">12 ms</span>
+              <span class="stat-label">Audio Latency</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-shield-check"></i></div>
+            <div class="stat-info">
+              <span class="stat-number text-success">99.99%</span>
+              <span class="stat-label">Uptime</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Visual / Live Music Card Mockup -->
+      <div class="hero-visual">
+        <div class="music-card-mockup glass-panel">
+          <div class="mockup-header">
+            <div class="window-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="mockup-status">
+              <span class="status-indicator"></span> Playing in <strong>#Music-Lounge</strong>
+            </div>
+          </div>
+
+          <div class="mockup-artwork-wrap">
+            <img id="mockupImg" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=600&auto=format&fit=crop&q=80" alt="Album Art" class="mockup-artwork">
+            <div class="mockup-badge">384kbps Hi-Res</div>
+          </div>
+
+          <div class="mockup-body">
+            <div class="track-info">
+              <h3 id="mockupTitle" class="track-title">Cyberpunk Synthwave 2077</h3>
+              <p id="mockupArtist" class="track-artist">Lofi & Chill Beats</p>
+            </div>
+            <button class="like-btn"><i class="fa-solid fa-heart"></i></button>
+          </div>
+
+          <!-- Equalizer Animation -->
+          <div class="equalizer-bar-group">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 45%;"></div>
+            </div>
+            <div class="progress-times">
+              <span id="mockupCurrentTime">01:48</span>
+              <span id="mockupTotalTime">03:54</span>
+            </div>
+          </div>
+
+          <!-- Interactive Controls Preview -->
+          <div class="mockup-controls">
+            <button class="ctrl-btn" title="Loop" id="mockupLoopBtn"><i class="fa-solid fa-repeat"></i></button>
+            <button class="ctrl-btn" title="Previous"><i class="fa-solid fa-backward-step"></i></button>
+            <button class="ctrl-btn ctrl-play" id="mockupPlayBtn" title="Play/Pause"><i class="fa-solid fa-pause"></i></button>
+            <button class="ctrl-btn" title="Next" id="mockupSkipBtn"><i class="fa-solid fa-forward-step"></i></button>
+            <button class="ctrl-btn" title="Volume" id="mockupVolBtn"><i class="fa-solid fa-volume-high"></i></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Server Dashboard & DJ Role Manager Section -->
+    <section id="servers" class="dashboard-section container">
+      <div class="section-header text-center">
+        <span class="badge-chip"><i class="fa-solid fa-server"></i> Server Dashboard</span>
+        <h2 class="section-title">Manage Your Discord Servers</h2>
+        <p class="section-subtitle">Select a server to add XON Music, configure DJ roles, and grant permissions to members.</p>
+      </div>
+
+      <!-- Auth Required Prompt / Active Servers Container -->
+      <div id="serversDashboardWrapper">
+        <!-- Logged Out State Banner -->
+        <div id="serversLoggedOutBanner" class="servers-login-prompt glass-panel text-center">
+          <div class="prompt-icon">
+            <i class="fa-brands fa-discord"></i>
+          </div>
+          <h3>Login with Discord to Access Your Servers</h3>
+          <p>Authorize securely via official Discord OAuth2 to view your servers, invite XON Music, and customize DJ role permissions.</p>
+          <button id="btnPromptDiscordLogin" class="btn btn-discord btn-lg btn-glow">
+            <i class="fa-brands fa-discord"></i> Login with Discord
+          </button>
+        </div>
+
+        <!-- Logged In Servers Grid -->
+        <div id="serversLoggedInGrid" class="servers-grid" style="display: none;">
+          <!-- Populated dynamically via official Discord API -->
+        </div>
+      </div>
+    </section>
+
+    <!-- DJ Roles & Permission Manager Section -->
+    <section id="roles" class="roles-section container">
+      <div class="roles-card glass-panel">
+        <div class="roles-header">
+          <div class="roles-icon">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          <div>
+            <h2>Server DJ Role & Permission System 🎛️</h2>
+            <p>Define custom roles (e.g. <code>@DJ</code>, <code>@MusicMaster</code>, <code>@VIP</code>) so members with that role can play and control music from Discord and the Web Dashboard.</p>
+          </div>
+        </div>
+
+        <div class="roles-setup-grid">
+          <div class="role-config-box">
+            <h4><i class="fa-solid fa-gear"></i> Set Active Server DJ Role</h4>
+            <p class="role-help">Users with this role will have permission to queue songs, change volume, skip, and control the web player.</p>
+            <div class="role-input-group">
+              <span class="input-prefix">@</span>
+              <input type="text" id="customDJRoleInput" placeholder="DJ" value="DJ">
+              <button id="btnSaveDJRole" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-check"></i> Save Role
+              </button>
+            </div>
+            <span class="role-status-text" id="roleStatusText">✅ Active DJ Role: <strong>@DJ</strong> (Members with this role can manage playback)</span>
+          </div>
+
+          <div class="role-hierarchy-box">
+            <h4><i class="fa-solid fa-shield-halved"></i> Permission Hierarchy</h4>
+            <div class="perm-list">
+              <div class="perm-item">
+                <span class="perm-badge badge-admin">Server Owner / Admin</span>
+                <span class="perm-desc">Full access to configure DJ roles, clear queue, volume, skip & bot settings.</span>
+              </div>
+              <div class="perm-item">
+                <span class="perm-badge badge-dj">Custom DJ Role (@DJ)</span>
+                <span class="perm-desc">Can play music, skip tracks, toggle loop, pause/resume from Web & Discord.</span>
+              </div>
+              <div class="perm-item">
+                <span class="perm-badge badge-member">Server Members</span>
+                <span class="perm-desc">Can request tracks to the queue and view the now playing status.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Web Player Controller Section -->
+    <section id="player" class="dashboard-section container">
+      <div class="section-header text-center">
+        <span class="badge-chip"><i class="fa-solid fa-sliders"></i> Real-time Web Controller</span>
+        <h2 class="section-title">Live Web Music Controller</h2>
+        <p class="section-subtitle">Search, manage the server queue, and control sound volume right from your browser.</p>
+      </div>
+
+      <div class="player-grid">
+        <!-- Search & Control Panel -->
+        <div class="player-main-card glass-panel">
+          <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="webSearchInput" placeholder="Search any song, artist name, or paste YouTube link..." autocomplete="off">
+            <button id="webSearchBtn" class="btn btn-primary btn-sm">
+              <i class="fa-solid fa-play"></i> Play Track
+            </button>
+          </div>
+
+          <!-- Quick Suggestions -->
+          <div class="quick-tags">
+            <span class="tag-title">🔥 Trending Searches:</span>
+            <button class="tag-pill" data-query="Lofi Hip Hop Radio Beats">Lofi Chill ☕</button>
+            <button class="tag-pill" data-query="Midnight Synthwave Mix">Synthwave 🌆</button>
+            <button class="tag-pill" data-query="Luis Fonsi Despacito">Despacito 🌴</button>
+            <button class="tag-pill" data-query="Imagine Dragons Believer">Believer ⚡</button>
+          </div>
+
+          <div class="player-console">
+            <div class="console-screen">
+              <div class="console-head">
+                <span class="console-dot green"></span>
+                <span>Console Status: Connected to Discord Gateway (DAVE E2EE Active)</span>
+              </div>
+              <div class="console-body" id="consoleLogs">
+                <p class="log-line"><span class="log-time">[11:46:01]</span> XON Music Bot initialized with prefix <code>!</code> and slash commands <code>/</code></p>
+                <p class="log-line"><span class="log-time">[11:46:02]</span> Opus Codec 48000Hz 2-Channels ready.</p>
+                <p class="log-line text-info"><span class="log-time">[11:46:05]</span> Multi-Client YouTube streaming engine active.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Volume & Sound Filters -->
+          <div class="audio-fx-wrap">
+            <div class="fx-item">
+              <label for="webVolumeRange"><i class="fa-solid fa-volume-high"></i> Master Volume: <span id="volValueDisplay">100%</span></label>
+              <input type="range" id="webVolumeRange" min="0" max="100" value="100" class="slider-control">
+            </div>
+            <div class="fx-toggles">
+              <button class="fx-btn active" id="fxBassBtn"><i class="fa-solid fa-drum"></i> Bass Boost</button>
+              <button class="fx-btn" id="fxNightcoreBtn"><i class="fa-solid fa-wand-magic-sparkles"></i> Nightcore</button>
+              <button class="fx-btn" id="fx8dBtn"><i class="fa-solid fa-headphones"></i> 8D Audio</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Queue List -->
+        <div class="queue-card glass-panel">
+          <div class="queue-header">
+            <h3><i class="fa-solid fa-list-ol"></i> Server Queue</h3>
+            <span class="queue-count" id="queueCountBadge">3 Songs In Queue</span>
+          </div>
+
+          <div class="queue-list" id="queueListContainer">
+            <div class="queue-item active-track">
+              <div class="q-num"><i class="fa-solid fa-volume-high fa-beat"></i></div>
+              <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=120&auto=format&fit=crop&q=80" alt="track" class="q-thumb">
+              <div class="q-details">
+                <span class="q-title">Cyberpunk Synthwave 2077</span>
+                <span class="q-meta">Lofi Chill • 03:54 • By @Gamer</span>
+              </div>
+              <span class="badge-playing">PLAYING</span>
+            </div>
+
+            <div class="queue-item">
+              <div class="q-num">1</div>
+              <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80" alt="track" class="q-thumb">
+              <div class="q-details">
+                <span class="q-title">Luis Fonsi - Despacito</span>
+                <span class="q-meta">Latin Pop • 03:50</span>
+              </div>
+              <button class="q-action-btn" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="queue-item">
+              <div class="q-num">2</div>
+              <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=120&auto=format&fit=crop&q=80" alt="track" class="q-thumb">
+              <div class="q-details">
+                <span class="q-title">Imagine Dragons - Believer</span>
+                <span class="q-meta">Rock/Electronic • 03:24</span>
+              </div>
+              <button class="q-action-btn" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+
+          <div class="queue-footer">
+            <button id="clearQueueBtn" class="btn btn-danger-glass btn-sm">
+              <i class="fa-solid fa-trash"></i> Clear Queue
+            </button>
+            <button id="shuffleQueueBtn" class="btn btn-glass btn-sm">
+              <i class="fa-solid fa-shuffle"></i> Shuffle
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Commands Explorer -->
+    <section id="commands" class="commands-section container">
+      <div class="section-header text-center">
+        <span class="badge-chip"><i class="fa-solid fa-terminal"></i> Command Handbook</span>
+        <h2 class="section-title">Simple, Intuitive & Fast Commands</h2>
+        <p class="section-subtitle">Use the default prefix <code>!</code> or slash <code>/</code> commands inside Discord.</p>
+      </div>
+
+      <div class="commands-filter-bar">
+        <button class="cmd-filter-btn active" data-category="all">All Commands</button>
+        <button class="cmd-filter-btn" data-category="playback">Playback</button>
+        <button class="cmd-filter-btn" data-category="queue">Queue & Playlist</button>
+        <button class="cmd-filter-btn" data-category="roles">DJ & Roles</button>
+        <button class="cmd-filter-btn" data-category="voice">Voice & Volume</button>
+      </div>
+
+      <div class="commands-table-wrap glass-panel">
+        <table class="commands-table">
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Aliases</th>
+              <th>Description</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="commandsTableBody">
+            <tr data-cat="roles">
+              <td><span class="cmd-badge">/setdj &lt;role&gt;  or  !setdj</span></td>
+              <td><code>!djrole</code></td>
+              <td>Configures the server DJ role required for web playback & control.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/setdj role:@DJ" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+            <tr data-cat="voice">
+              <td><span class="cmd-badge">/join  or  !join</span></td>
+              <td><code>!j</code>, <code>!connect</code></td>
+              <td>Summons the bot to your current voice channel immediately.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/join" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+            <tr data-cat="playback">
+              <td><span class="cmd-badge">/play &lt;query&gt;  or  !play</span></td>
+              <td><code>!p</code>, <code>!sing</code></td>
+              <td>Plays a song from YouTube query or direct audio link.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/play query:" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+            <tr data-cat="playback">
+              <td><span class="cmd-badge">/pause  or  !pause</span></td>
+              <td>—</td>
+              <td>Pauses current music stream immediately.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/pause" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+            <tr data-cat="playback">
+              <td><span class="cmd-badge">/resume  or  !resume</span></td>
+              <td><code>!unpause</code></td>
+              <td>Resumes paused playback.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/resume" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+            <tr data-cat="queue">
+              <td><span class="cmd-badge">/skip  or  !skip</span></td>
+              <td><code>!s</code>, <code>!next</code></td>
+              <td>Skips the currently playing song to the next in queue.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/skip" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+            <tr data-cat="queue">
+              <td><span class="cmd-badge">/queue  or  !queue</span></td>
+              <td><code>!q</code></td>
+              <td>Shows the list of upcoming songs in the server queue.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/queue" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+            <tr data-cat="playback">
+              <td><span class="cmd-badge">/nowplaying  or  !np</span></td>
+              <td><code>!current</code></td>
+              <td>Displays rich embed with artwork, author, and track duration.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/nowplaying" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+            <tr data-cat="voice">
+              <td><span class="cmd-badge">/volume &lt;0-100&gt;</span></td>
+              <td><code>!vol</code></td>
+              <td>Adjusts output volume without distortion.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/volume volume:100" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+            <tr data-cat="queue">
+              <td><span class="cmd-badge">/loop  or  !loop</span></td>
+              <td><code>!repeat</code></td>
+              <td>Toggles single song looping on or off.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/loop" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+            <tr data-cat="queue">
+              <td><span class="cmd-badge">/stop  or  !stop</span></td>
+              <td><code>!clear</code></td>
+              <td>Stops music playback and clears upcoming queue.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/stop" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+            <tr data-cat="voice">
+              <td><span class="cmd-badge">/leave  or  !leave</span></td>
+              <td><code>!dc</code>, <code>!disconnect</code></td>
+              <td>Disconnects the bot from voice channel.</td>
+              <td><button class="btn-copy-cmd" data-cmd="/leave" title="Copy"><i class="fa-regular fa-copy"></i></button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Call to Action Banner -->
+    <section class="cta-section container">
+      <div class="cta-banner glass-panel">
+        <div class="cta-text">
+          <h2>Ready to Upgrade Your Discord Server?</h2>
+          <p>Join thousands of active servers and play high quality music with zero hassle.</p>
+        </div>
+        <div class="cta-buttons">
+          <a href="https://discord.com/oauth2/authorize?client_id=1539145323048599625&permissions=8&scope=bot%20applications.commands" target="_blank" class="btn btn-primary btn-lg btn-glow">
+            <i class="fa-brands fa-discord"></i> Invite XON Music Now
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Discord OAuth Login Modal (100% Real Official Flow) -->
+  <div id="authModal" class="modal-overlay">
+    <div class="modal-card glass-panel">
+      <button class="modal-close-btn" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+      <div class="modal-header">
+        <div class="discord-logo-icon">
+          <i class="fa-brands fa-discord"></i>
+        </div>
+        <h3>Discord Sign-In</h3>
+        <p>Login securely with your Discord account to manage your servers and control the web player.</p>
+      </div>
+
+      <div class="modal-body" id="modalBodyContent">
+        <div class="oauth-benefits">
+          <div class="b-item"><i class="fa-solid fa-shield-check text-success"></i> Official Discord OAuth2 Secure Login</div>
+          <div class="b-item"><i class="fa-solid fa-server text-purple"></i> Instant sync with your Discord Servers</div>
+          <div class="b-item"><i class="fa-solid fa-sliders text-cyan"></i> Real-time DJ Role & Web Controller Access</div>
+        </div>
+
+        <button id="btnProceedDiscordAuth" class="btn btn-discord btn-lg btn-block btn-glow">
+          <i class="fa-brands fa-discord"></i> Authorize with Discord
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Footer -->
+  <footer class="footer container">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <span class="brand-name">XON<span class="gradient-text">Music</span></span>
+        <p>Ultra-Fast High-Fidelity Discord Music Bot • 2026</p>
+      </div>
+      <div class="footer-links">
+        <a href="#servers">My Servers</a>
+        <a href="#roles">DJ Roles</a>
+        <a href="#player">Web Player</a>
+        <a href="#commands">Commands</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 XON Music. Powered by Discord API & yt-dlp.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

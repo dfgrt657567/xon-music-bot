@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: xon-music-bot
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "./render-build.sh"
+    startCommand: "python main_render.py"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: BOT_PREFIX
+        value: "!"
+      - key: DISCORD_TOKEN
+        sync: false
