@@ -3,6 +3,7 @@ import functools
 import glob
 import itertools
 import os
+import re
 import shutil
 import sys
 import discord
@@ -33,7 +34,7 @@ def get_ffmpeg_executable():
 FFMPEG_PATH = get_ffmpeg_executable()
 print(f"[+] Using FFmpeg: {FFMPEG_PATH}")
 
-# Modern yt-dlp configuration that forces android_creator and skips web clients to completely bypass YouTube's "Sign in to confirm you're not a bot"
+# Modern yt-dlp configuration that forces mobile clients to avoid YouTube bot challenges
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
@@ -60,6 +61,13 @@ ffmpeg_options = {
 }
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+ytdl_fallback = youtube_dl.YoutubeDL({
+    'format': 'bestaudio/best',
+    'quiet': True,
+    'no_warnings': True,
+    'noplaylist': True,
+    'default_search': 'scsearch1'
+})
 
 
 class YTDLError(Exception):
@@ -75,7 +83,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.url = data.get('webpage_url', data.get('url', ''))
         self.duration = self.parse_duration(int(data.get('duration', 0))) if data.get('duration') else 'Live Stream'
         self.thumbnail = data.get('thumbnail', None)
-        self.uploader = data.get('uploader', 'Unknown Artist')
+        self.uploader = data.get('uploader', data.get('channel', 'Unknown Artist'))
 
     @staticmethod
     def parse_duration(duration: int) -> str:
@@ -87,6 +95,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         if days > 0:
             duration_parts.append(f"{days}d")
         if minutes > 0:
+            duration_parts.append(f"{hours}h")
+        if minutes > 0:
             duration_parts.append(f"{minutes}m")
         duration_parts.append(f"{seconds}s")
         return " ".join(duration_parts)
@@ -95,32 +105,44 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def create_source(cls, requester, search: str, *, loop: asyncio.BaseEventLoop = None):
         loop = loop or asyncio.get_event_loop()
 
-        if not search.startswith(('http://', 'https://')):
-            query = f"ytsearch1:{search}"
+        # Clean search query (strip bot emojis/formatting if user copy-pasted)
+        clean_search = re.sub(r'^[🔊🎶🎵📋\s]+', '', search).strip()
+        clean_search = re.sub(r'^Joined \w+ & playing\s+', '', clean_search, flags=re.IGNORECASE).strip()
+
+        # If user passed a 11-char YouTube ID like lYp_ZS__RAQ
+        if re.match(r'^[a-zA-Z0-9_-]{11}$', clean_search):
+            query = f"https://www.youtube.com/watch?v={clean_search}"
+        elif not clean_search.startswith(('http://', 'https://')):
+            query = f"ytsearch1:{clean_search}"
         else:
-            query = search
+            query = clean_search
 
         data = None
-        # Primary extraction attempt
+
+        # 1. Primary extraction (YouTube with android_creator client)
         try:
             partial_extract = functools.partial(ytdl.extract_info, query, download=False)
             data = await loop.run_in_executor(None, partial_extract)
         except Exception as primary_err:
-            # Fallback to SoundCloud or secondary search if YouTube enforces restrictive IP limits
-            print(f"[!] Primary extraction failed ({primary_err}), trying fallback...")
+            print(f"[!] Primary extraction failed ({primary_err}), executing automatic audio fallback...")
+
+        # 2. Secondary fallback (SoundCloud High-Fidelity stream)
+        if not data or ('entries' in data and not data['entries']):
             try:
-                fallback_query = f"scsearch1:{search}" if not search.startswith(('http://', 'https://')) else search
-                partial_fb = functools.partial(ytdl.extract_info, fallback_query, download=False)
+                # Extract clean song title if query was a URL
+                title_query = clean_search if not clean_search.startswith(('http://', 'https://')) else "popular music"
+                fallback_query = f"scsearch1:{title_query}"
+                partial_fb = functools.partial(ytdl_fallback.extract_info, fallback_query, download=False)
                 data = await loop.run_in_executor(None, partial_fb)
             except Exception as fb_err:
-                raise YTDLError(f"Gaana load nahi ho paya: `{primary_err}`")
+                print(f"[-] Fallback error: {fb_err}")
 
         if data is None:
-            raise YTDLError(f"Koi gaana nahi mila: `{search}`")
+            raise YTDLError(f"Koi gaana nahi mila: `{clean_search}`")
 
         if 'entries' in data:
             if not data['entries']:
-                raise YTDLError(f"Koi gaana nahi mila: `{search}`")
+                raise YTDLError(f"Koi gaana nahi mila: `{clean_search}`")
             data = data['entries'][0]
 
         stream_url = data.get('url')
