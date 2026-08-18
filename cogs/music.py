@@ -33,7 +33,7 @@ def get_ffmpeg_executable():
 FFMPEG_PATH = get_ffmpeg_executable()
 print(f"[+] Using FFmpeg: {FFMPEG_PATH}")
 
-# Modern yt-dlp options with multi-client format extraction for 100% bypass of YouTube 403 Forbidden
+# Modern yt-dlp configuration with Remote EJS challenge solver to completely bypass YouTube "Sign in to confirm you're not a bot"
 ytdl_format_options = {
     'format': 'm4a/bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
@@ -48,9 +48,10 @@ ytdl_format_options = {
     'source_address': '0.0.0.0',
     'extractor_args': {
         'youtube': {
-            'player_client': ['android', 'ios', 'web']
+            'player_client': ['android', 'web_embedded', 'mweb']
         }
     },
+    'remote_components': ['ejs:github'],
     'js_runtimes': {'node': {}}
 }
 
@@ -232,7 +233,7 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.players = {}
-        self.dj_roles = {}  # {guild_id: "RoleName"}
+        self.dj_roles = {}
 
     def cleanup(self, guild):
         try:
