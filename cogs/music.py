@@ -2,10 +2,12 @@ import asyncio
 import functools
 import glob
 import itertools
+import json
 import os
 import re
 import shutil
 import sys
+import urllib.request
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -34,7 +36,7 @@ def get_ffmpeg_executable():
 FFMPEG_PATH = get_ffmpeg_executable()
 print(f"[+] Using FFmpeg: {FFMPEG_PATH}")
 
-# Modern yt-dlp configuration that forces mobile clients to avoid YouTube bot challenges
+# Primary yt-dlp config (Mobile client optimization for YouTube)
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
@@ -70,27 +72,42 @@ ytdl_fallback = youtube_dl.YoutubeDL({
 })
 
 
+def get_youtube_video_id(search: str):
+    """Extract 11-char YouTube video ID from any link or raw ID."""
+    clean = search.strip()
+    if re.fullmatch(r'[a-zA-Z0-9_-]{11}', clean):
+        return clean
+    yt_match = re.search(r'(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([a-zA-Z0-9_-]{11})', clean)
+    if yt_match:
+        return yt_match.group(1)
+    return None
+
+
+def fetch_oembed_title(video_id: str):
+    """Fetch real YouTube video title via public oEmbed API (Never blocked on Render/Datacenter IPs)."""
+    try:
+        url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        with urllib.request.urlopen(req, timeout=5) as res:
+            data = json.loads(res.read().decode('utf-8'))
+            return data.get('title')
+    except Exception:
+        return None
+
+
 def normalize_music_query(search: str) -> str:
-    """Normalize YouTube URLs (youtu.be, shorts, share links, 11-char IDs) or search queries."""
+    """Normalize YouTube URLs or search queries."""
     clean = search.strip()
     clean = re.sub(r'^[🔊🎶🎵📋\s]+', '', clean).strip()
     clean = re.sub(r'^Joined \w+ & playing\s+', '', clean, flags=re.IGNORECASE).strip()
 
-    # 1. Raw 11-char YouTube ID (e.g. lYp_ZS__RAQ)
-    if re.fullmatch(r'[a-zA-Z0-9_-]{11}', clean):
-        return f"https://www.youtube.com/watch?v={clean}"
-
-    # 2. YouTube URL (youtu.be, watch?v=, shorts/, embed/, share params)
-    yt_match = re.search(r'(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([a-zA-Z0-9_-]{11})', clean)
-    if yt_match:
-        video_id = yt_match.group(1)
+    video_id = get_youtube_video_id(clean)
+    if video_id:
         return f"https://www.youtube.com/watch?v={video_id}"
 
-    # 3. Direct Other Links (SoundCloud, Spotify, MP3/stream)
     if clean.startswith(('http://', 'https://')):
         return clean
 
-    # 4. Search query (e.g. Despacito)
     return f"ytsearch1:{clean}"
 
 
@@ -119,6 +136,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         if days > 0:
             duration_parts.append(f"{days}d")
         if minutes > 0:
+            duration_parts.append(f"{minutes}h")
+        if minutes > 0:
             duration_parts.append(f"{minutes}m")
         duration_parts.append(f"{seconds}s")
         return " ".join(duration_parts)
@@ -127,7 +146,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def create_source(cls, requester, search: str, *, loop: asyncio.BaseEventLoop = None):
         loop = loop or asyncio.get_event_loop()
         query = normalize_music_query(search)
-        is_direct_url = query.startswith(('http://', 'https://'))
+        video_id = get_youtube_video_id(search)
 
         data = None
 
@@ -136,16 +155,25 @@ class YTDLSource(discord.PCMVolumeTransformer):
             partial_extract = functools.partial(ytdl.extract_info, query, download=False)
             data = await loop.run_in_executor(None, partial_extract)
         except Exception as primary_err:
-            print(f"[!] Primary extraction error on {query}: {primary_err}")
-            # If not a direct URL, try SoundCloud fallback
-            if not is_direct_url:
+            print(f"[!] Primary extraction failed on {query}: {primary_err}")
+
+        # 2. Resilient fallback (If YouTube blocks direct datacenter extraction, use oEmbed + SoundCloud fallback)
+        if not data or ('entries' in data and not data['entries']):
+            search_term = None
+            if video_id:
+                oembed_title = await loop.run_in_executor(None, lambda: fetch_oembed_title(video_id))
+                if oembed_title:
+                    search_term = oembed_title
+            if not search_term and not search.startswith(('http://', 'https://')):
+                search_term = search.strip()
+
+            if search_term:
                 try:
-                    clean_text = search.strip()
-                    fallback_query = f"scsearch1:{clean_text}"
+                    fallback_query = f"scsearch1:{search_term}"
                     partial_fb = functools.partial(ytdl_fallback.extract_info, fallback_query, download=False)
                     data = await loop.run_in_executor(None, partial_fb)
                 except Exception as fb_err:
-                    print(f"[-] Fallback error: {fb_err}")
+                    print(f"[-] Fallback search failed: {fb_err}")
 
         if data is None:
             raise YTDLError(f"Koi gaana nahi mila: `{search}`")
