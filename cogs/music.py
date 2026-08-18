@@ -71,21 +71,20 @@ ytdl_fallback = youtube_dl.YoutubeDL({
     'default_search': 'scsearch1'
 })
 
-# Dedicated config for Instagram Reels / Posts / TV
-ytdl_instagram = youtube_dl.YoutubeDL({
+# Universal extractor for all non-YouTube platforms (Instagram, TikTok, Twitter, Facebook, etc.)
+ytdl_universal = youtube_dl.YoutubeDL({
     'format': 'bestaudio/best',
     'quiet': True,
     'no_warnings': True,
     'noplaylist': True,
     'nocheckcertificate': True,
-    'cookiefile': None,  # Add cookie file path here if needed for private reels
+    'source_address': '0.0.0.0',
 })
 
 
 def get_youtube_video_id(search: str):
     """Extract 11-char YouTube video ID from any link or raw ID."""
     clean = search.strip()
-    # BUG-05 FIX: Only match bare 11-char IDs when input looks exactly like a YouTube ID (no spaces/common words)
     if re.fullmatch(r'[a-zA-Z0-9_-]{11}', clean) and not re.search(r'[aeiou]{3,}', clean, re.IGNORECASE):
         return clean
     yt_match = re.search(r'(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([a-zA-Z0-9_-]{11})', clean)
@@ -94,24 +93,64 @@ def get_youtube_video_id(search: str):
     return None
 
 
-INSTAGRAM_PATTERN = re.compile(
-    r'(?:https?://)?(?:www\.)?instagram\.com/(?:reel|p|tv|reels)/([A-Za-z0-9_-]+)',
-    re.IGNORECASE
-)
+# ── Platform URL Patterns ────────────────────────────────────────────────────
+PLATFORM_PATTERNS = {
+    'Instagram':   re.compile(r'(?:https?://)?(?:www\.)?instagram\.com/(?:reel|reels|p|tv)/', re.I),
+    'TikTok':      re.compile(r'(?:https?://)?(?:www\.)?(?:tiktok\.com/@[^/]+/video/|vm\.tiktok\.com/)', re.I),
+    'Twitter':     re.compile(r'(?:https?://)?(?:www\.)?(?:twitter\.com|x\.com)/\w+/status/', re.I),
+    'Facebook':    re.compile(r'(?:https?://)?(?:www\.)?(?:facebook\.com|fb\.watch)/', re.I),
+    'Twitch':      re.compile(r'(?:https?://)?(?:www\.)?twitch\.tv/(?:videos/|clip)', re.I),
+    'Reddit':      re.compile(r'(?:https?://)?(?:www\.)?reddit\.com/r/\w+/comments/', re.I),
+    'Dailymotion': re.compile(r'(?:https?://)?(?:www\.)?dailymotion\.com/video/', re.I),
+    'Vimeo':       re.compile(r'(?:https?://)?(?:www\.)?vimeo\.com/\d+', re.I),
+    'Rumble':      re.compile(r'(?:https?://)?(?:www\.)?rumble\.com/v', re.I),
+    'SoundCloud':  re.compile(r'(?:https?://)?(?:www\.)?soundcloud\.com/', re.I),
+    'Spotify':     re.compile(r'(?:https?://)?open\.spotify\.com/(?:track|album|playlist)/', re.I),
+    'Pinterest':   re.compile(r'(?:https?://)?(?:www\.)?pinterest\.(?:com|co\.uk)/pin/', re.I),
+}
+
+PLATFORM_EMOJIS = {
+    'Instagram': '📸', 'TikTok': '🎵', 'Twitter': '🐦',
+    'Facebook': '👤', 'Twitch': '🟣', 'Reddit': '🤖',
+    'Dailymotion': '🎥', 'Vimeo': '🎦', 'Rumble': '📢',
+    'SoundCloud': '☁️', 'Spotify': '💚', 'Pinterest': '📌',
+    'YouTube': '📺', 'Search': '🔍',
+}
+
+
+def detect_platform(url: str) -> str:
+    """Detect which platform a URL belongs to. Returns platform name or None."""
+    for platform, pattern in PLATFORM_PATTERNS.items():
+        if pattern.search(url):
+            return platform
+    return None
+
 
 def is_instagram_url(search: str) -> bool:
-    """Return True if the input is an Instagram Reel/Post/TV link."""
-    return bool(INSTAGRAM_PATTERN.search(search.strip()))
+    return bool(PLATFORM_PATTERNS['Instagram'].search(search.strip()))
 
 
 def get_instagram_shortcode(search: str):
-    """Extract the Instagram shortcode from a reel/post/tv URL."""
-    m = INSTAGRAM_PATTERN.search(search.strip())
+    m = re.search(r'instagram\.com/(?:reel|reels|p|tv)/([A-Za-z0-9_-]+)', search)
     return m.group(1) if m else None
 
 
+def fetch_spotify_title(url: str):
+    """Extract Spotify track title via oEmbed API for YouTube search fallback."""
+    try:
+        oembed_url = f"https://open.spotify.com/oembed?url={url}"
+        req = urllib.request.Request(oembed_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=5) as res:
+            data = json.loads(res.read().decode('utf-8'))
+            title = data.get('title', '')
+            artist = data.get('author_name', '')
+            return f"{title} {artist}".strip() if title else None
+    except Exception:
+        return None
+
+
 def fetch_oembed_title(video_id: str):
-    """Fetch real YouTube video title via public oEmbed API (Never blocked on Render/Datacenter IPs)."""
+    """Fetch real YouTube video title via public oEmbed API."""
     try:
         url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
@@ -123,21 +162,18 @@ def fetch_oembed_title(video_id: str):
 
 
 def normalize_music_query(search: str) -> str:
-    """Normalize YouTube/Instagram URLs or search queries."""
+    """Normalize URLs (all platforms) or search queries."""
     clean = search.strip()
     clean = re.sub(r'^[\U0001F000-\U0001FFFF\s]+', '', clean).strip()
     clean = re.sub(r'^Joined \w+ & playing\s+', '', clean, flags=re.IGNORECASE).strip()
 
-    # Instagram Reels — pass directly, handled separately in create_source
-    if is_instagram_url(clean):
+    # Any supported platform URL — pass directly to create_source
+    if clean.startswith(('http://', 'https://')):
         return clean
 
     video_id = get_youtube_video_id(clean)
     if video_id:
         return f"https://www.youtube.com/watch?v={video_id}"
-
-    if clean.startswith(('http://', 'https://')):
-        return clean
 
     return f"ytsearch1:{clean}"
 
@@ -179,45 +215,77 @@ class YTDLSource(discord.PCMVolumeTransformer):
         loop = loop or asyncio.get_event_loop()
         query = normalize_music_query(search)
         video_id = get_youtube_video_id(search)
+        platform = detect_platform(query) if query.startswith(('http://', 'https://')) else None
 
         data = None
+        emoji = PLATFORM_EMOJIS.get(platform or 'Search', '🔍')
 
-        # ── Instagram Reel / Post / TV ──────────────────────────────────────
-        if is_instagram_url(query):
-            print(f"[+] Instagram URL detected: {query}")
+        # ── Spotify: extract title via oEmbed then search YouTube ──────────────────────
+        if platform == 'Spotify':
+            print(f"[💚] Spotify link detected, fetching title...")
+            spotify_title = await loop.run_in_executor(None, lambda: fetch_spotify_title(query))
+            if spotify_title:
+                yt_query = f"ytsearch1:{spotify_title}"
+                try:
+                    partial_sp = functools.partial(ytdl.extract_info, yt_query, download=False)
+                    sp_data = await loop.run_in_executor(None, partial_sp)
+                    if sp_data and 'entries' in sp_data and sp_data['entries']:
+                        data = sp_data['entries'][0]
+                except Exception as sp_err:
+                    print(f"[!] Spotify YouTube search failed: {sp_err}")
+            if not data:
+                raise YTDLError(f"💚 Spotify track nahi mil paya. Song naam se search karein: `{search}`")
+            stream_url = data.get('url')
+            if not stream_url:
+                raise YTDLError("Spotify audio stream URL nahi mili.")
+            audio_source = discord.FFmpegPCMAudio(stream_url, executable=FFMPEG_PATH, **ffmpeg_options)
+            return cls(audio_source, data=data, requester=requester, volume=1.0)
+
+        # ── All other external platform URLs (Instagram, TikTok, Twitter, Facebook, etc.) ───
+        if platform and platform not in ('YouTube',):
+            print(f"[{emoji}] {platform} URL detected: {query}")
             try:
-                partial_ig = functools.partial(ytdl_instagram.extract_info, query, download=False)
-                data = await loop.run_in_executor(None, partial_ig)
+                partial_ext = functools.partial(ytdl_universal.extract_info, query, download=False)
+                data = await loop.run_in_executor(None, partial_ext)
                 if data and 'entries' in data:
                     data = data['entries'][0] if data['entries'] else None
-            except Exception as ig_err:
-                print(f"[!] Instagram extraction failed: {ig_err}")
+            except Exception as ext_err:
+                print(f"[!] {platform} extraction failed: {ext_err}")
                 data = None
 
-            # Fallback: search Instagram reel title on YouTube
+            # Fallback: search by title on YouTube if direct extraction failed
             if not data:
-                shortcode = get_instagram_shortcode(query)
-                if shortcode:
+                print(f"[!] {platform} direct extraction failed, trying YouTube title search...")
+                # For Instagram, use shortcode as search hint
+                if platform == 'Instagram':
+                    sc = get_instagram_shortcode(query)
+                    fb_q = f"ytsearch1:instagram reel {sc}" if sc else None
+                else:
+                    fb_q = None
+
+                if fb_q:
                     try:
-                        fallback_q = f"ytsearch1:instagram reel {shortcode}"
-                        partial_fb = functools.partial(ytdl.extract_info, fallback_q, download=False)
+                        partial_fb = functools.partial(ytdl.extract_info, fb_q, download=False)
                         fb_data = await loop.run_in_executor(None, partial_fb)
                         if fb_data and 'entries' in fb_data and fb_data['entries']:
                             data = fb_data['entries'][0]
                     except Exception as fb_err:
-                        print(f"[-] Instagram YouTube fallback failed: {fb_err}")
+                        print(f"[-] {platform} fallback search failed: {fb_err}")
 
             if not data:
-                raise YTDLError(f"Instagram reel load nahi hua. Public reel hai? Link check karein: `{search}`")
+                raise YTDLError(
+                    f"{emoji} {platform} link se audio nahi mila. "
+                    f"Public content hai? Ya song naam se search karein: `{search}`"
+                )
 
             stream_url = data.get('url')
             if not stream_url:
-                raise YTDLError("Instagram audio stream URL nahi mili.")
+                raise YTDLError(f"{emoji} {platform} audio stream URL nahi mili.")
 
             audio_source = discord.FFmpegPCMAudio(stream_url, executable=FFMPEG_PATH, **ffmpeg_options)
             return cls(audio_source, data=data, requester=requester, volume=1.0)
 
-        # ── YouTube / Search ────────────────────────────────────────────────
+        # ── YouTube / Text Search ───────────────────────────────────────────────
         # 1. Primary extraction
         try:
             partial_extract = functools.partial(ytdl.extract_info, query, download=False)
