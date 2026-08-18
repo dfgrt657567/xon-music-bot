@@ -1,5 +1,6 @@
 import asyncio
 import os
+import site
 import sys
 import threading
 import http.server
@@ -19,7 +20,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, directory=WEB_DIR, **kwargs)
 
     def log_message(self, format, *args):
-        # Minimal logging
         pass
 
 def run_web_server():
@@ -28,7 +28,6 @@ def run_web_server():
         print(f"[+] Render Web Server is listening on port {PORT}")
         httpd.serve_forever()
 
-# Start web server in a background daemon thread
 web_thread = threading.Thread(target=run_web_server, daemon=True)
 web_thread.start()
 
@@ -37,6 +36,37 @@ web_thread.start()
 # ==============================================================================
 import discord
 from discord.ext import commands
+
+def init_opus():
+    if not discord.opus.is_loaded():
+        try:
+            discord.opus._load_default()
+        except Exception:
+            pass
+        if not discord.opus.is_loaded():
+            candidates = []
+            try:
+                candidates.extend(site.getsitepackages())
+            except Exception:
+                pass
+            local_app = os.environ.get('LOCALAPPDATA', '')
+            if local_app:
+                candidates.append(os.path.join(local_app, 'Packages', 'PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0', 'LocalCache', 'local-packages', 'Python313', 'site-packages'))
+            for sp in candidates:
+                for dll_name in ['libopus-0.x64.dll', 'opus.dll', 'libopus.so.0', 'libopus.so']:
+                    dll_path = os.path.join(sp, 'discord', 'bin', dll_name)
+                    if os.path.exists(dll_path):
+                        try:
+                            discord.opus.load_opus(dll_path)
+                            print(f"[+] Loaded Opus DLL: {dll_path}")
+                            break
+                        except Exception:
+                            pass
+                if discord.opus.is_loaded():
+                    break
+    print(f"[+] Opus Audio Loaded on Render: {discord.opus.is_loaded()}")
+
+init_opus()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 PREFIX = os.getenv("BOT_PREFIX", "!")

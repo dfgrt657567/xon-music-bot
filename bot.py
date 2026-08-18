@@ -1,5 +1,6 @@
 import asyncio
 import os
+import site
 import sys
 
 # Ensure UTF-8 output on Windows console
@@ -13,6 +14,38 @@ if sys.platform == "win32":
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+
+# Load libopus for crystal-clear Discord voice encoding
+def init_opus():
+    if not discord.opus.is_loaded():
+        try:
+            discord.opus._load_default()
+        except Exception:
+            pass
+        if not discord.opus.is_loaded():
+            candidates = []
+            try:
+                candidates.extend(site.getsitepackages())
+            except Exception:
+                pass
+            local_app = os.environ.get('LOCALAPPDATA', '')
+            if local_app:
+                candidates.append(os.path.join(local_app, 'Packages', 'PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0', 'LocalCache', 'local-packages', 'Python313', 'site-packages'))
+            for sp in candidates:
+                for dll_name in ['libopus-0.x64.dll', 'opus.dll']:
+                    dll_path = os.path.join(sp, 'discord', 'bin', dll_name)
+                    if os.path.exists(dll_path):
+                        try:
+                            discord.opus.load_opus(dll_path)
+                            print(f"[+] Loaded Opus DLL: {dll_path}")
+                            break
+                        except Exception:
+                            pass
+                if discord.opus.is_loaded():
+                    break
+    print(f"[+] Opus Audio Loaded: {discord.opus.is_loaded()}")
+
+init_opus()
 
 # Load environment variables from .env
 load_dotenv()
@@ -59,27 +92,21 @@ async def on_ready():
     # Set bot status/activity
     activity = discord.Activity(
         type=discord.ActivityType.listening,
-        name=f"/play & !play | {PREFIX}musichelp"
+        name=f"/play & {PREFIX}play | XON Music"
     )
     await bot.change_presence(status=discord.Status.online, activity=activity)
 
 
 @bot.event
 async def on_command_error(ctx, error):
-    """Global error handler for prefix commands."""
     if isinstance(error, commands.CommandNotFound):
-        return
-
-    if isinstance(error, commands.MissingRequiredArgument):
-        return await ctx.send(f"⚠️ Argument missing hai! Sahi format ke liye `{PREFIX}musichelp` dekhein.")
-
-    if isinstance(error, commands.CommandOnCooldown):
-        return await ctx.send(f"⏳ Thoda wait karein ({error.retry_after:.1f}s remaining).")
-
-    if isinstance(error, commands.CheckFailure):
-        return
-
-    print(f"[Command Error in {ctx.command}]: {error}")
+        return  # Ignore unknown commands silently
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f"❌ Kripya pura command likhein. Jaise: `{PREFIX}play <song-name>`")
+    elif isinstance(error, commands.CommandOnCooldown):
+        await ctx.send(f"⏳ Thoda wait karein ({error.retry_after:.1f}s bache hain).")
+    else:
+        print(f"[-] Command Error ({ctx.command}): {error}")
 
 
 async def main():
@@ -91,28 +118,13 @@ async def main():
         except Exception as e:
             print(f"[-] Failed to load cogs.music: {e}")
 
-        if TOKEN and TOKEN != "YOUR_DISCORD_BOT_TOKEN_HERE":
-            try:
-                await bot.start(TOKEN)
-            except discord.errors.PrivilegedIntentsRequired:
-                print("=" * 65)
-                print("⚠️ [ACTION REQUIRED] Discord Developer Portal Settings:")
-                print("Bot ko commands read karne ke liye Privileged Intents enable karni hogi:")
-                print("1. https://discord.com/developers/applications par jaayein")
-                print("2. Apne Bot par click karein -> Left menu se 'Bot' tab kholein")
-                print("3. Neeche scroll karke 'Privileged Gateway Intents' me:")
-                print("   [x] Message Content Intent  <-- (Isko ENABLE karein)")
-                print("   [x] Server Members Intent")
-                print("4. 'Save Changes' par click karein aur bot dobara run karein!")
-                print("=" * 65)
-            except discord.errors.LoginFailure:
-                print("❌ Invalid Bot Token! Kripya .env me sahi token dalein.")
-            except Exception as e:
-                print(f"❌ Error starting bot: {e}")
+        # Start the bot
+        if TOKEN:
+            await bot.start(TOKEN)
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n[*] Bot stop ho gaya.")
+        print("\n[*] Bot band kar diya gaya. Goodbye!")
