@@ -71,6 +71,16 @@ ytdl_fallback = youtube_dl.YoutubeDL({
     'default_search': 'scsearch1'
 })
 
+# Dedicated config for Instagram Reels / Posts / TV
+ytdl_instagram = youtube_dl.YoutubeDL({
+    'format': 'bestaudio/best',
+    'quiet': True,
+    'no_warnings': True,
+    'noplaylist': True,
+    'nocheckcertificate': True,
+    'cookiefile': None,  # Add cookie file path here if needed for private reels
+})
+
 
 def get_youtube_video_id(search: str):
     """Extract 11-char YouTube video ID from any link or raw ID."""
@@ -82,6 +92,22 @@ def get_youtube_video_id(search: str):
     if yt_match:
         return yt_match.group(1)
     return None
+
+
+INSTAGRAM_PATTERN = re.compile(
+    r'(?:https?://)?(?:www\.)?instagram\.com/(?:reel|p|tv|reels)/([A-Za-z0-9_-]+)',
+    re.IGNORECASE
+)
+
+def is_instagram_url(search: str) -> bool:
+    """Return True if the input is an Instagram Reel/Post/TV link."""
+    return bool(INSTAGRAM_PATTERN.search(search.strip()))
+
+
+def get_instagram_shortcode(search: str):
+    """Extract the Instagram shortcode from a reel/post/tv URL."""
+    m = INSTAGRAM_PATTERN.search(search.strip())
+    return m.group(1) if m else None
 
 
 def fetch_oembed_title(video_id: str):
@@ -97,10 +123,14 @@ def fetch_oembed_title(video_id: str):
 
 
 def normalize_music_query(search: str) -> str:
-    """Normalize YouTube URLs or search queries."""
+    """Normalize YouTube/Instagram URLs or search queries."""
     clean = search.strip()
-    clean = re.sub(r'^[🔊🎶🎵📋\s]+', '', clean).strip()
+    clean = re.sub(r'^[\U0001F000-\U0001FFFF\s]+', '', clean).strip()
     clean = re.sub(r'^Joined \w+ & playing\s+', '', clean, flags=re.IGNORECASE).strip()
+
+    # Instagram Reels — pass directly, handled separately in create_source
+    if is_instagram_url(clean):
+        return clean
 
     video_id = get_youtube_video_id(clean)
     if video_id:
@@ -152,6 +182,42 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
         data = None
 
+        # ── Instagram Reel / Post / TV ──────────────────────────────────────
+        if is_instagram_url(query):
+            print(f"[+] Instagram URL detected: {query}")
+            try:
+                partial_ig = functools.partial(ytdl_instagram.extract_info, query, download=False)
+                data = await loop.run_in_executor(None, partial_ig)
+                if data and 'entries' in data:
+                    data = data['entries'][0] if data['entries'] else None
+            except Exception as ig_err:
+                print(f"[!] Instagram extraction failed: {ig_err}")
+                data = None
+
+            # Fallback: search Instagram reel title on YouTube
+            if not data:
+                shortcode = get_instagram_shortcode(query)
+                if shortcode:
+                    try:
+                        fallback_q = f"ytsearch1:instagram reel {shortcode}"
+                        partial_fb = functools.partial(ytdl.extract_info, fallback_q, download=False)
+                        fb_data = await loop.run_in_executor(None, partial_fb)
+                        if fb_data and 'entries' in fb_data and fb_data['entries']:
+                            data = fb_data['entries'][0]
+                    except Exception as fb_err:
+                        print(f"[-] Instagram YouTube fallback failed: {fb_err}")
+
+            if not data:
+                raise YTDLError(f"Instagram reel load nahi hua. Public reel hai? Link check karein: `{search}`")
+
+            stream_url = data.get('url')
+            if not stream_url:
+                raise YTDLError("Instagram audio stream URL nahi mili.")
+
+            audio_source = discord.FFmpegPCMAudio(stream_url, executable=FFMPEG_PATH, **ffmpeg_options)
+            return cls(audio_source, data=data, requester=requester, volume=1.0)
+
+        # ── YouTube / Search ────────────────────────────────────────────────
         # 1. Primary extraction
         try:
             partial_extract = functools.partial(ytdl.extract_info, query, download=False)
@@ -159,7 +225,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         except Exception as primary_err:
             print(f"[!] Primary extraction failed on {query}: {primary_err}")
 
-        # 2. Resilient fallback (If YouTube blocks direct datacenter extraction, use oEmbed + SoundCloud fallback)
+        # 2. Resilient fallback (oEmbed title + SoundCloud)
         if not data or ('entries' in data and not data['entries']):
             search_term = None
             if video_id:
