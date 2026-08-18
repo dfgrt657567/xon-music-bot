@@ -102,6 +102,22 @@ async def on_ready():
     )
     await bot.change_presence(status=discord.Status.online, activity=activity)
 
+    bot.loop.create_task(anti_sleep_keepalive())
+
+async def anti_sleep_keepalive():
+    await bot.wait_until_ready()
+    import urllib.request
+    render_url = os.environ.get("RENDER_EXTERNAL_URL") or "https://xon-music-bot.onrender.com"
+    print(f"[+] Anti-Sleep 24/7 Keep-Alive active: Pinging {render_url} every 8 minutes...")
+    while not bot.is_closed():
+        await asyncio.sleep(480) # 8 minutes
+        try:
+            req = urllib.request.Request(render_url, headers={'User-Agent': 'XONMusic-AntiSleep-KeepAlive/2.0'})
+            with urllib.request.urlopen(req, timeout=10) as res:
+                print(f"[+] Anti-Sleep Heartbeat: HTTP {res.status} OK (Bot Kept Awake 24/7)")
+        except Exception as e:
+            print(f"[!] Anti-Sleep ping failed: {e}")
+
 async def main():
     async with bot:
         try:

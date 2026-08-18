@@ -226,6 +226,7 @@ class GuildMusicPlayer:
 
         self.current = None
         self.loop = False
+        self.mode_247 = True  # 24/7 mode is ON by default
         self.volume = 1.0
         self.dj_role = "DJ"
 
@@ -238,9 +239,12 @@ class GuildMusicPlayer:
             self.next.clear()
 
             try:
-                # Disconnect after 3 minutes of idle inactivity
-                async with asyncio.timeout(180):
+                # If 24/7 mode is on, wait forever. Else, disconnect after 3 mins of idle inactivity.
+                if self.mode_247:
                     song = await self.queue.get()
+                else:
+                    async with asyncio.timeout(180):
+                        song = await self.queue.get()
             except asyncio.TimeoutError:
                 if self.guild.voice_client and not self.guild.voice_client.is_playing():
                     try:
@@ -507,6 +511,13 @@ class Music(commands.Cog):
         await interaction.guild.voice_client.disconnect()
         await interaction.response.send_message("👋 Voice channel se disconnect ho gaya!")
 
+    @app_commands.command(name="247", description="Toggle 24/7 mode (Bot never leaves voice channel)")
+    async def slash_247(self, interaction: discord.Interaction):
+        player = self.get_player(interaction.guild, interaction.channel)
+        player.mode_247 = not player.mode_247
+        status = "ON ✅ (Ab bot hamesha Voice Channel me rahega)" if player.mode_247 else "OFF ❌ (Bot idle hone par leave kar dega)"
+        await interaction.response.send_message(f"🎧 24/7 Mode: **{status}**")
+
     # ----------------- PREFIX COMMANDS (!play, !join, !setdj, etc.) -----------------
 
     @commands.command(name='setdj', aliases=['djrole'])
@@ -618,6 +629,13 @@ class Music(commands.Cog):
         await ctx.voice_client.disconnect()
         await ctx.send("👋 Voice channel se disconnect ho gaya!")
 
+    @commands.command(name='247')
+    async def toggle_247(self, ctx):
+        player = self.get_player(ctx.guild, ctx.channel)
+        player.mode_247 = not player.mode_247
+        status = "ON ✅ (Ab bot hamesha Voice Channel me rahega)" if player.mode_247 else "OFF ❌ (Bot idle hone par leave kar dega)"
+        await ctx.send(f"🎧 24/7 Mode: **{status}**")
+
     @commands.command(name='musichelp', aliases=['mhelp', 'music'])
     async def music_help(self, ctx):
         embed = discord.Embed(
@@ -636,6 +654,7 @@ class Music(commands.Cog):
         embed.add_field(name="🎶 `!np` ya `/nowplaying`", value="Current song details", inline=False)
         embed.add_field(name="🔊 `!volume` ya `/volume <0-100>`", value="Volume adjust karein", inline=False)
         embed.add_field(name="🔁 `!loop` ya `/loop`", value="Song loop toggle karein", inline=False)
+        embed.add_field(name="🎧 `!247` ya `/247`", value="Toggle 24/7 Always Active mode", inline=False)
         embed.add_field(name="👋 `!leave` ya `/leave`", value="Voice channel se disconnect karein", inline=False)
         embed.set_footer(text="Slash Commands & Prefix Commands Supported 🎧")
         await ctx.send(embed=embed)
