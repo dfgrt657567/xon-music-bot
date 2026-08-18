@@ -36,7 +36,7 @@ def get_ffmpeg_executable():
 FFMPEG_PATH = get_ffmpeg_executable()
 print(f"[+] Using FFmpeg: {FFMPEG_PATH}")
 
-# Primary yt-dlp config (Mobile client optimization for YouTube)
+# Primary yt-dlp config — Multi-client rotation to bypass bot detection
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
@@ -51,8 +51,9 @@ ytdl_format_options = {
     'source_address': '0.0.0.0',
     'extractor_args': {
         'youtube': {
-            'player_client': ['android_creator', 'android', 'ios'],
-            'player_skip': ['web', 'web_creator', 'mweb', 'tv_embedded']
+            # Rotate clients: tv + android handle Shorts & bot-checked videos best
+            'player_client': ['tv', 'android', 'ios', 'android_creator'],
+            'player_skip': ['web', 'web_creator', 'mweb'],
         }
     }
 }
@@ -164,6 +165,8 @@ def fetch_oembed_title(video_id: str):
 def normalize_music_query(search: str) -> str:
     """Normalize URLs (all platforms) or search queries."""
     clean = search.strip()
+    # Strip Discord markdown junk: backticks, quotes, angle brackets from both ends
+    clean = re.sub(r'^[`\'"<>\s]+|[`\'"<>\s]+$', '', clean)
     clean = re.sub(r'^[\U0001F000-\U0001FFFF\s]+', '', clean).strip()
     clean = re.sub(r'^Joined \w+ & playing\s+', '', clean, flags=re.IGNORECASE).strip()
 
