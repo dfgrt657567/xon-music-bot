@@ -244,6 +244,71 @@
       .clear-quick { grid-template-columns: repeat(2, 1fr); }
       .login-card { padding: 32px 24px; }
     }
+
+    /* ── Tab Navigation ─────────────────────────── */
+    .tab-nav {
+      display: flex; gap: 8px; margin-bottom: 20px;
+      border-bottom: 1px solid var(--border); padding-bottom: 0;
+    }
+    .tab-btn {
+      background: none; border: none; color: var(--text2);
+      font-family: var(--font); font-size: 0.9rem; font-weight: 600;
+      padding: 10px 20px; cursor: pointer; border-radius: 8px 8px 0 0;
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .tab-btn.active { color: var(--purple); border-bottom-color: var(--purple); background: rgba(139,92,246,0.08); }
+
+    /* ── Anti-Spam Panel ────────────────────────── */
+    .spam-panel { max-width: 720px; }
+    .spam-header { margin-bottom: 20px; }
+    .spam-config-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px;
+    }
+    .spam-form { display: flex; flex-direction: column; gap: 16px; }
+    .spam-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group label {
+      font-size: 0.82rem; font-weight: 600; color: var(--text2);
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .form-group select {
+      background: var(--bg2); border: 1px solid var(--border); color: var(--text);
+      font-family: var(--font); font-size: 0.9rem; padding: 10px 14px;
+      border-radius: 10px; outline: none; cursor: pointer;
+    }
+    .form-group select:focus { border-color: var(--purple); }
+    .form-group input[type="range"] {
+      accent-color: var(--purple); height: 4px; cursor: pointer;
+    }
+    .val-badge {
+      background: var(--purple); color: white; font-size: 0.78rem;
+      font-weight: 700; padding: 2px 8px; border-radius: 20px; min-width: 28px;
+      text-align: center;
+    }
+    .timeout-grid {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+    }
+    .timeout-pill {
+      background: var(--bg2); border: 1px solid var(--border); color: var(--text2);
+      font-family: var(--font); font-size: 0.82rem; font-weight: 600;
+      padding: 6px 14px; border-radius: 20px; cursor: pointer; transition: all 0.2s;
+    }
+    .timeout-pill:hover { border-color: var(--purple); color: var(--purple); }
+    .timeout-pill.active { background: var(--purple); border-color: var(--purple); color: white; }
+
+    /* Protected channel rows */
+    .spam-ch-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; background: var(--bg2); border-radius: 10px;
+      margin-bottom: 8px; font-size: 0.88rem;
+    }
+    .spam-ch-row .ch-info { display: flex; align-items: center; gap: 10px; }
+    .spam-status { font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+    .spam-status.on { background: rgba(34,197,94,0.15); color: var(--green); }
+    .spam-status.off { background: rgba(107,114,128,0.15); color: var(--text2); }
   </style>
 </head>
 <body>
@@ -307,87 +372,158 @@
     </div>
 
     <div class="container">
-      <div class="dash-grid">
-        <!-- Channels Sidebar -->
-        <div class="channels-panel">
-          <div class="channels-panel-head">
-            <h3><i class="fa-solid fa-list-ul" style="color:var(--purple);margin-right:8px;"></i> Channels</h3>
-            <span id="chCount" style="font-size:0.78rem;color:var(--text2);"></span>
+      <!-- Tab Navigation -->
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('clearTab', this)">
+          <i class="fa-solid fa-trash"></i> Chat Clear
+        </button>
+        <button class="tab-btn" onclick="switchTab('spamTab', this)">
+          <i class="fa-solid fa-shield-halved"></i> Anti-Spam
+        </button>
+      </div>
+
+      <!-- TAB 1: Chat Clear -->
+      <div id="clearTab" class="tab-content">
+        <div class="dash-grid">
+          <!-- Channels Sidebar -->
+          <div class="channels-panel">
+            <div class="channels-panel-head">
+              <h3><i class="fa-solid fa-list-ul" style="color:var(--purple);margin-right:8px;"></i> Channels</h3>
+              <span id="chCount" style="font-size:0.78rem;color:var(--text2);"></span>
+            </div>
+            <div class="channel-search">
+              <input type="text" id="chSearch" placeholder="🔍 Search channel..." oninput="filterChannels()">
+            </div>
+            <div class="channels-list" id="channelList">
+              <div style="padding:20px;text-align:center;color:var(--text2);">
+                <div class="loader"></div>
+                <p style="margin-top:12px;font-size:0.85rem;">Loading channels...</p>
+              </div>
+            </div>
           </div>
-          <div class="channel-search">
-            <input type="text" id="chSearch" placeholder="🔍 Search channel..." oninput="filterChannels()">
-          </div>
-          <div class="channels-list" id="channelList">
-            <div style="padding:20px;text-align:center;color:var(--text2);">
-              <div class="loader"></div>
-              <p style="margin-top:12px;font-size:0.85rem;">Loading channels...</p>
+
+          <!-- Right Panel -->
+          <div class="clear-panel">
+            <div id="noChannelView" class="no-channel">
+              <i class="fa-solid fa-hashtag"></i>
+              <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">Channel Select Karein</h3>
+              <p style="font-size:0.88rem;">Left side se koi channel select karein jiske messages clear karne hain.</p>
+            </div>
+            <div id="channelView" style="display:none;">
+              <div class="clear-panel-head">
+                <h2>🗑️ Messages Clear Karein</h2>
+                <div class="ch-name"><i class="fa-solid fa-hashtag"></i> <span id="selectedChName">—</span></div>
+              </div>
+              <div class="clear-body">
+                <p style="font-size:0.85rem;color:var(--text2);margin-bottom:16px;">Quick Actions:</p>
+                <div class="clear-quick">
+                  <button class="quick-btn" onclick="confirmClear(10)"><i class="fa-solid fa-trash-can"></i> 10<span>messages</span></button>
+                  <button class="quick-btn" onclick="confirmClear(25)"><i class="fa-solid fa-trash-can"></i> 25<span>messages</span></button>
+                  <button class="quick-btn" onclick="confirmClear(50)"><i class="fa-solid fa-trash-can"></i> 50<span>messages</span></button>
+                  <button class="quick-btn" onclick="confirmClear(100)"><i class="fa-solid fa-trash-can"></i> 100<span>messages</span></button>
+                  <button class="quick-btn" onclick="confirmClear(250)"><i class="fa-solid fa-trash-can"></i> 250<span>messages</span></button>
+                  <button class="quick-btn" onclick="confirmClear(500)" style="border-color:var(--red);color:var(--red);"><i class="fa-solid fa-fire"></i> 500<span>MAX</span></button>
+                </div>
+                <div class="custom-clear">
+                  <h4><i class="fa-solid fa-sliders" style="color:var(--purple);margin-right:8px;"></i> Custom Amount</h4>
+                  <div class="input-row">
+                    <input type="number" id="customAmt" min="1" max="500" value="10" placeholder="Amount">
+                    <button class="btn btn-danger" onclick="confirmClear(parseInt(document.getElementById('customAmt').value))">
+                      <i class="fa-solid fa-trash"></i> Clear
+                    </button>
+                  </div>
+                </div>
+                <div class="action-log">
+                  <h4><i class="fa-solid fa-terminal"></i> Action Log</h4>
+                  <div id="logEntries">
+                    <div class="log-entry"><span class="log-time">—</span> Dashboard ready. Channel select karein.</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Right Panel -->
-        <div class="clear-panel">
-          <!-- No channel selected -->
-          <div id="noChannelView" class="no-channel">
-            <i class="fa-solid fa-hashtag"></i>
-            <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">Channel Select Karein</h3>
-            <p style="font-size:0.88rem;">Left side se koi channel select karein jiske messages clear karne hain.</p>
+      <!-- TAB 2: Anti-Spam -->
+      <div id="spamTab" class="tab-content" style="display:none;">
+        <div class="spam-panel">
+          <div class="spam-header">
+            <div>
+              <h2 style="font-size:1.2rem;font-weight:800;">🛡️ Anti-Spam System</h2>
+              <p style="color:var(--text2);font-size:0.88rem;margin-top:4px;">Channels select karein jahan spam protection enable karni hai. Spam karne par auto-timeout milega.</p>
+            </div>
           </div>
 
-          <!-- Channel selected view -->
-          <div id="channelView" style="display:none;">
-            <div class="clear-panel-head">
-              <h2>🗑️ Messages Clear Karein</h2>
-              <div class="ch-name"><i class="fa-solid fa-hashtag"></i> <span id="selectedChName">—</span></div>
+          <!-- Config Form -->
+          <div class="spam-config-card">
+            <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:20px;"><i class="fa-solid fa-gear" style="color:var(--purple);margin-right:8px;"></i> Spam Settings</h3>
+
+            <div class="spam-form">
+              <div class="form-group">
+                <label>📢 Channel Select Karein</label>
+                <select id="spamChannelSelect">
+                  <option value="">-- Loading channels... --</option>
+                </select>
+              </div>
+              <div class="spam-controls">
+                <div class="form-group">
+                  <label>💬 Spam Threshold</label>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="range" id="spamThreshold" min="2" max="15" value="5" oninput="document.getElementById('thresholdVal').textContent=this.value" style="flex:1;">
+                    <span id="thresholdVal" class="val-badge">5</span>
+                    <span style="font-size:0.78rem;color:var(--text2);">msgs</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>⏱️ Detection Window</label>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="range" id="spamWindow" min="2" max="30" value="5" oninput="document.getElementById('windowVal').textContent=this.value" style="flex:1;">
+                    <span id="windowVal" class="val-badge">5</span>
+                    <span style="font-size:0.78rem;color:var(--text2);">sec</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>🔇 Timeout Duration</label>
+                  <div class="timeout-grid">
+                    <button class="timeout-pill active" data-val="30" onclick="selectTimeout(this)">30s</button>
+                    <button class="timeout-pill" data-val="60" onclick="selectTimeout(this)">1 min</button>
+                    <button class="timeout-pill" data-val="300" onclick="selectTimeout(this)">5 min</button>
+                    <button class="timeout-pill" data-val="600" onclick="selectTimeout(this)">10 min</button>
+                    <button class="timeout-pill" data-val="1800" onclick="selectTimeout(this)">30 min</button>
+                    <button class="timeout-pill" data-val="3600" onclick="selectTimeout(this)">1 hr</button>
+                  </div>
+                  <input type="hidden" id="spamTimeout" value="30">
+                </div>
+              </div>
+
+              <div style="display:flex;gap:12px;margin-top:20px;">
+                <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="saveSpamConfig(true)">
+                  <i class="fa-solid fa-shield-check"></i> Enable Anti-Spam
+                </button>
+                <button class="btn btn-ghost" style="flex:1;justify-content:center;" onclick="saveSpamConfig(false)">
+                  <i class="fa-solid fa-ban"></i> Disable
+                </button>
+              </div>
             </div>
-            <div class="clear-body">
-              <!-- Quick Clear Buttons -->
-              <p style="font-size:0.85rem;color:var(--text2);margin-bottom:16px;">Quick Actions:</p>
-              <div class="clear-quick">
-                <button class="quick-btn" onclick="confirmClear(10)">
-                  <i class="fa-solid fa-trash-can"></i> 10
-                  <span>messages</span>
-                </button>
-                <button class="quick-btn" onclick="confirmClear(25)">
-                  <i class="fa-solid fa-trash-can"></i> 25
-                  <span>messages</span>
-                </button>
-                <button class="quick-btn" onclick="confirmClear(50)">
-                  <i class="fa-solid fa-trash-can"></i> 50
-                  <span>messages</span>
-                </button>
-                <button class="quick-btn" onclick="confirmClear(100)">
-                  <i class="fa-solid fa-trash-can"></i> 100
-                  <span>messages</span>
-                </button>
-                <button class="quick-btn" onclick="confirmClear(250)">
-                  <i class="fa-solid fa-trash-can"></i> 250
-                  <span>messages</span>
-                </button>
-                <button class="quick-btn" onclick="confirmClear(500)" style="border-color:var(--red);color:var(--red);">
-                  <i class="fa-solid fa-fire"></i> 500
-                  <span>MAX</span>
-                </button>
-              </div>
+          </div>
 
-              <!-- Custom Amount -->
-              <div class="custom-clear">
-                <h4><i class="fa-solid fa-sliders" style="color:var(--purple);margin-right:8px;"></i> Custom Amount</h4>
-                <div class="input-row">
-                  <input type="number" id="customAmt" min="1" max="500" value="10" placeholder="Amount">
-                  <button class="btn btn-danger" onclick="confirmClear(parseInt(document.getElementById('customAmt').value))">
-                    <i class="fa-solid fa-trash"></i> Clear
-                  </button>
-                </div>
-              </div>
+          <!-- Active Channels List -->
+          <div class="spam-config-card" style="margin-top:20px;">
+            <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:16px;"><i class="fa-solid fa-list-check" style="color:var(--green);margin-right:8px;"></i> Protected Channels</h3>
+            <div id="spamChannelsList">
+              <p style="color:var(--text2);font-size:0.88rem;">Koi channel configure nahi hai.</p>
+            </div>
+          </div>
 
-              <!-- Action Log -->
-              <div class="action-log">
-                <h4><i class="fa-solid fa-terminal"></i> Action Log</h4>
-                <div id="logEntries">
-                  <div class="log-entry"><span class="log-time">—</span> Dashboard ready. Channel select karein.</div>
-                </div>
-              </div>
+          <!-- How it works -->
+          <div class="spam-config-card" style="margin-top:20px;background:rgba(139,92,246,0.05);border-color:rgba(139,92,246,0.2);">
+            <h3 style="font-size:0.88rem;font-weight:700;margin-bottom:12px;color:var(--neon);">ℹ️ Kaise Kaam Karta Hai</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.82rem;color:var(--text2);">
+              <div><i class="fa-solid fa-eye" style="color:var(--purple);margin-right:6px;"></i> Bot messages monitor karta hai</div>
+              <div><i class="fa-solid fa-bolt" style="color:var(--yellow);margin-right:6px;"></i> Threshold exceed hone par action</div>
+              <div><i class="fa-solid fa-clock" style="color:var(--purple);margin-right:6px;"></i> Timeout auto-apply hota hai</div>
+              <div><i class="fa-solid fa-shield" style="color:var(--green);margin-right:6px;"></i> Admins exempt hain</div>
             </div>
           </div>
         </div>
@@ -682,6 +818,103 @@
     function logout() {
       localStorage.removeItem('xon_admin_token');
       window.location.reload();
+    }
+
+    // ── Tab Switching ────────────────────────────────────────────────────────
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).style.display = 'block';
+      btn.classList.add('active');
+      if (tabId === 'spamTab') populateSpamChannels();
+    }
+
+    // ── Timeout Pill Select ──────────────────────────────────────────────────
+    function selectTimeout(btn) {
+      document.querySelectorAll('.timeout-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('spamTimeout').value = btn.dataset.val;
+    }
+
+    // ── Populate Anti-Spam Channel Dropdown ──────────────────────────────────
+    function populateSpamChannels() {
+      const sel = document.getElementById('spamChannelSelect');
+      sel.innerHTML = '<option value="">-- Channel select karein --</option>';
+      allChannels.forEach(ch => {
+        const opt = document.createElement('option');
+        opt.value = ch.id;
+        opt.textContent = `#${ch.name}`;
+        sel.appendChild(opt);
+      });
+      loadSpamConfig();
+    }
+
+    // ── Load Spam Config from API ────────────────────────────────────────────
+    async function loadSpamConfig() {
+      try {
+        const res = await fetch(`${API_BASE}/api/antispam/config`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        if (!res.ok) return;
+        const cfg = await res.json();
+        renderProtectedChannels(cfg.channels || {});
+      } catch (e) { /* silent */ }
+    }
+
+    // ── Render Protected Channels List ───────────────────────────────────────
+    function renderProtectedChannels(channels) {
+      const wrap = document.getElementById('spamChannelsList');
+      const entries = Object.entries(channels);
+      if (!entries.length) {
+        wrap.innerHTML = '<p style="color:var(--text2);font-size:0.88rem;">Koi channel configure nahi hai.</p>';
+        return;
+      }
+      wrap.innerHTML = entries.map(([chId, cfg]) => {
+        const ch = allChannels.find(c => c.id === chId);
+        const name = ch ? `#${ch.name}` : `#unknown`;
+        const status = cfg.enabled ? 'on' : 'off';
+        const statusText = cfg.enabled ? '✅ ON' : '❌ OFF';
+        return `<div class="spam-ch-row">
+          <div class="ch-info">
+            <span style="color:var(--purple);">#</span>
+            <span>${ch ? ch.name : chId}</span>
+            <span class="spam-status ${status}">${statusText}</span>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text2);">
+            ${cfg.threshold}msgs / ${cfg.window}s → ${cfg.timeout_secs}s timeout
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Save Spam Config ──────────────────────────────────────────────────────
+    async function saveSpamConfig(enabled) {
+      const chId = document.getElementById('spamChannelSelect').value;
+      if (!chId) return toast('Channel select karein!', 'error');
+
+      const threshold = parseInt(document.getElementById('spamThreshold').value);
+      const window_s  = parseInt(document.getElementById('spamWindow').value);
+      const timeout   = parseInt(document.getElementById('spamTimeout').value);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/antispam/config`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ channel_id: chId, enabled, threshold, window: window_s, timeout_secs: timeout })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          toast(`Anti-Spam ${enabled ? 'enabled' : 'disabled'} for #${data.channel_name || chId}!`, 'success');
+          loadSpamConfig();
+        } else {
+          toast(data.error || 'Error saving config', 'error');
+        }
+      } catch (e) {
+        toast('Network error', 'error');
+      }
     }
 
     // Boot

@@ -155,6 +155,13 @@ async def main():
         except Exception as e:
             print(f"[-] Failed to load cogs.welcome: {e}")
 
+        # Load the antispam cog
+        try:
+            await bot.load_extension("cogs.antispam")
+            print("[+] Cog 'cogs.antispam' successfully loaded.")
+        except Exception as e:
+            print(f"[-] Failed to load cogs.antispam: {e}")
+
         # Start the bot
         if TOKEN:
             await bot.start(TOKEN)

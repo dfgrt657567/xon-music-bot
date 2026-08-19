@@ -126,6 +126,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 channels.insert(0, {"category": "General", "channels": sorted(uncategorized, key=lambda x: x["position"])})
             return self._send_json({"channels": channels, "user": {"id": user["id"], "username": user.get("global_name") or user["username"]}})
 
+        # ── API: AntiSpam Config (GET) ────────────────────────────────
+        if self.path == "/api/antispam/config":
+            auth = self.headers.get("Authorization", "").replace("Bearer ", "")
+            is_admin, _ = self._verify_discord_admin(auth)
+            if not is_admin:
+                return self._send_json({"error": "Access denied."}, 403)
+            import json as _json
+            cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "antispam_config.json")
+            if os.path.exists(cfg_path):
+                with open(cfg_path, "r") as f:
+                    return self._send_json(_json.load(f))
+            return self._send_json({"channels": {}})
+
         # Serve static files
         super().do_GET()
 
@@ -162,6 +175,52 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
             except Exception as e:
                 print(f"[!] Clear API error: {e}")
+                return self._send_json({"error": str(e)}, 500)
+
+        # ── API: AntiSpam Config (POST) ──────────────────────────────────
+        if self.path == "/api/antispam/config":
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                body = json.loads(self.rfile.read(length).decode("utf-8"))
+                auth = self.headers.get("Authorization", "").replace("Bearer ", "")
+                is_admin, _ = self._verify_discord_admin(auth)
+                if not is_admin:
+                    return self._send_json({"error": "Access denied."}, 403)
+
+                ch_id       = str(body.get("channel_id", ""))
+                enabled     = bool(body.get("enabled", True))
+                threshold   = max(2, min(int(body.get("threshold", 5)), 20))
+                window_s    = max(2, min(int(body.get("window", 5)), 30))
+                timeout_s   = max(10, min(int(body.get("timeout_secs", 30)), 3600))
+
+                cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "antispam_config.json")
+                cfg = {"channels": {}}
+                if os.path.exists(cfg_path):
+                    with open(cfg_path, "r") as f:
+                        cfg = json.load(f)
+
+                cfg["channels"][ch_id] = {
+                    "enabled": enabled,
+                    "threshold": threshold,
+                    "window": window_s,
+                    "timeout_secs": timeout_s
+                }
+                with open(cfg_path, "w") as f:
+                    json.dump(cfg, f, indent=2)
+
+                # Reload cog config if bot is running
+                if bot_instance:
+                    cog = bot_instance.cogs.get("AntiSpam")
+                    if cog:
+                        cog.reload_config()
+
+                ch_name = "unknown"
+                if bot_instance:
+                    ch = bot_instance.get_channel(int(ch_id))
+                    if ch: ch_name = ch.name
+
+                return self._send_json({"success": True, "channel_name": ch_name})
+            except Exception as e:
                 return self._send_json({"error": str(e)}, 500)
 
         self.send_response(404)
@@ -286,6 +345,12 @@ async def main():
             print("[+] Cog 'cogs.welcome' successfully loaded.")
         except Exception as e:
             print(f"[-] Failed to load cogs.welcome: {e}")
+
+        try:
+            await bot.load_extension("cogs.antispam")
+            print("[+] Cog 'cogs.antispam' successfully loaded.")
+        except Exception as e:
+            print(f"[-] Failed to load cogs.antispam: {e}")
 
         if TOKEN:
             await bot.start(TOKEN)
