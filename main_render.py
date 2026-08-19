@@ -220,6 +220,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True
 intents.guilds = True
+intents.members = True  # Required for on_member_join (Welcome system)
 
 bot = commands.Bot(
     command_prefix=commands.when_mentioned_or(PREFIX),
