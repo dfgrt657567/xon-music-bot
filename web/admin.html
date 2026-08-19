@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XON Admin — Server Dashboard</title>
+  <meta name="description" content="XON Music Bot Admin Dashboard — Manage your server channels, clear messages, and more.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0a0b0f;
+      --bg2: #111218;
+      --card: #16181f;
+      --border: #2a2d3a;
+      --purple: #8b5cf6;
+      --purple2: #6d28d9;
+      --neon: #a78bfa;
+      --red: #ef4444;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --text: #f0f0f5;
+      --text2: #9ca3b0;
+      --font: 'Outfit', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+    /* Glow background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* Navbar */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,11,15,0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); font-size: 1.2rem; font-weight: 700; }
+    .brand-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--purple), #4f46e5); border-radius: 10px; display: grid; place-items: center; font-size: 1rem; }
+    .brand span.accent { color: var(--neon); }
+    .nav-badge { background: linear-gradient(135deg, var(--red), #dc2626); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.05em; }
+    .nav-right { display: flex; gap: 12px; align-items: center; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; font-family: var(--font); font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; }
+    .btn-discord { background: #5865F2; color: #fff; }
+    .btn-discord:hover { background: #4752c4; transform: translateY(-1px); }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
+    .btn-sm { padding: 7px 14px; font-size: 0.82rem; }
+    .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--purple); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+    /* Main layout */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    /* Login wall */
+    #loginWall {
+      min-height: calc(100vh - 64px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 40px 20px;
+    }
+    .login-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      max-width: 440px;
+      width: 100%;
+    }
+    .login-logo { width: 72px; height: 72px; background: linear-gradient(135deg, var(--purple), #4f46e5); border-radius: 18px; display: grid; place-items: center; font-size: 1.8rem; margin: 0 auto 24px; }
+    .login-title { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
+    .login-sub { color: var(--text2); font-size: 0.95rem; margin-bottom: 32px; line-height: 1.6; }
+    .login-features { text-align: left; margin-bottom: 32px; display: flex; flex-direction: column; gap: 10px; }
+    .login-feature { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--text2); }
+    .login-feature i { color: var(--purple); width: 18px; }
+
+    /* Dashboard */
+    #dashboard { display: none; }
+
+    .dash-header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 32px 0;
+      margin-bottom: 32px;
+    }
+    .dash-header-inner { display: flex; align-items: center; gap: 20px; }
+    .guild-avatar { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; }
+    .guild-avatar-placeholder { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, var(--purple), #4f46e5); display: grid; place-items: center; font-size: 1.5rem; font-weight: 800; }
+    .guild-info h1 { font-size: 1.5rem; font-weight: 800; }
+    .guild-meta { display: flex; gap: 16px; margin-top: 6px; }
+    .guild-meta span { font-size: 0.85rem; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+    .guild-meta i { color: var(--purple); }
+    .user-chip { margin-left: auto; display: flex; align-items: center; gap: 10px; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2); border-radius: 40px; padding: 8px 16px; }
+    .user-chip img { width: 28px; height: 28px; border-radius: 50%; }
+    .user-chip .uname { font-size: 0.88rem; font-weight: 600; }
+    .user-chip .role-tag { font-size: 0.72rem; background: var(--purple); color: #fff; padding: 2px 8px; border-radius: 20px; }
+
+    /* Main grid */
+    .dash-grid { display: grid; grid-template-columns: 300px 1fr; gap: 24px; padding-bottom: 48px; }
+
+    /* Sidebar — channels */
+    .channels-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      height: fit-content;
+      position: sticky;
+      top: 80px;
+    }
+    .channels-panel-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .channels-panel-head h3 { font-size: 0.95rem; font-weight: 700; }
+    .channel-search { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .channel-search input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-family: var(--font); font-size: 0.85rem; }
+    .channel-search input:focus { outline: none; border-color: var(--purple); }
+    .channels-list { max-height: 60vh; overflow-y: auto; }
+    .ch-category { padding: 10px 16px 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text2); }
+    .ch-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 16px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text2);
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .ch-item:hover { background: rgba(139,92,246,0.08); color: var(--text); }
+    .ch-item.active { background: rgba(139,92,246,0.12); color: var(--neon); border-left-color: var(--purple); }
+    .ch-item i { font-size: 0.85rem; width: 16px; text-align: center; }
+
+    /* Right panel — clear controls */
+    .clear-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .clear-panel-head {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .clear-panel-head h2 { font-size: 1.1rem; font-weight: 700; }
+    .clear-panel-head .ch-name { display: flex; align-items: center; gap: 8px; color: var(--neon); font-size: 0.9rem; }
+
+    .clear-body { padding: 28px 24px; }
+
+    .clear-quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+    .quick-btn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; padding: 20px;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+      cursor: pointer; font-family: var(--font); font-size: 0.9rem; font-weight: 700; color: var(--text);
+      transition: all 0.2s;
+    }
+    .quick-btn:hover { border-color: var(--red); background: rgba(239,68,68,0.08); color: var(--red); transform: translateY(-2px); }
+    .quick-btn i { font-size: 1.4rem; }
+    .quick-btn span { font-size: 0.75rem; font-weight: 400; color: var(--text2); }
+
+    .custom-clear { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 24px; }
+    .custom-clear h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 16px; }
+    .input-row { display: flex; gap: 12px; align-items: center; }
+    .input-row input {
+      flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px 16px; color: var(--text); font-family: var(--font); font-size: 1rem;
+      font-weight: 600; text-align: center;
+    }
+    .input-row input:focus { outline: none; border-color: var(--purple); }
+    .input-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .confirm-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: none; place-items: center; z-index: 999;
+      backdrop-filter: blur(6px);
+    }
+    .confirm-modal.open { display: grid; }
+    .confirm-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 36px; max-width: 400px; width: 90%;
+      text-align: center;
+    }
+    .confirm-box .warn-icon { font-size: 3rem; margin-bottom: 16px; }
+    .confirm-box h3 { font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
+    .confirm-box p { color: var(--text2); font-size: 0.92rem; margin-bottom: 28px; line-height: 1.6; }
+    .confirm-actions { display: flex; gap: 12px; justify-content: center; }
+
+    /* Log */
+    .action-log { margin-top: 24px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; max-height: 200px; overflow-y: auto; }
+    .action-log h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text2); margin-bottom: 12px; }
+    .log-entry { font-size: 0.83rem; color: var(--text2); padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+    .log-entry:last-child { border-bottom: none; }
+    .log-entry.success { color: var(--green); }
+    .log-entry.err { color: var(--red); }
+    .log-time { font-size: 0.72rem; opacity: 0.6; min-width: 55px; }
+
+    /* No channel selected */
+    .no-channel { text-align: center; padding: 60px 24px; color: var(--text2); }
+    .no-channel i { font-size: 3rem; margin-bottom: 16px; color: var(--border); }
+
+    /* Toast */
+    .toast-wrap { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 20px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.88rem; font-weight: 500;
+      animation: slideUp 0.3s ease;
+      min-width: 220px; max-width: 360px;
+    }
+    .toast.success { border-color: var(--green); }
+    .toast.error { border-color: var(--red); }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Loading */
+    .loader { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+    @media (max-width: 768px) {
+      .dash-grid { grid-template-columns: 1fr; }
+      .channels-panel { position: static; }
+      .clear-quick { grid-template-columns: repeat(2, 1fr); }
+      .login-card { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-compact-disc"></i></div>
+      XON<span class="accent">Music</span>
+      <span class="nav-badge">ADMIN</span>
+    </a>
+    <div class="nav-right">
+      <a href="/" class="btn btn-ghost btn-sm"><i class="fa-solid fa-arrow-left"></i> Back to Site</a>
+      <button id="logoutBtn" class="btn btn-ghost btn-sm" style="display:none"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+  </nav>
+
+  <!-- Login Wall -->
+  <div id="loginWall">
+    <div class="login-card">
+      <div class="login-logo"><i class="fa-solid fa-shield-halved"></i></div>
+      <h1 class="login-title">Admin Dashboard</h1>
+      <p class="login-sub">XON Music ke server ko manage karne ke liye Discord se login karein. Sirf <strong>Server Owner</strong> ya <strong>Admin</strong> access kar sakte hain.</p>
+      <div class="login-features">
+        <div class="login-feature"><i class="fa-solid fa-check-circle"></i> All server channels dekho</div>
+        <div class="login-feature"><i class="fa-solid fa-check-circle"></i> Kisi bhi channel ke messages clear karo</div>
+        <div class="login-feature"><i class="fa-solid fa-check-circle"></i> Real-time action log</div>
+        <div class="login-feature"><i class="fa-solid fa-lock"></i> Sirf Admin/Owner access — secure</div>
+      </div>
+      <button id="loginBtn" class="btn btn-discord" style="width:100%; justify-content: center; font-size:1rem; padding: 14px;">
+        <i class="fa-brands fa-discord"></i> Login with Discord
+      </button>
+    </div>
+  </div>
+
+  <!-- Dashboard (hidden until logged in) -->
+  <div id="dashboard">
+    <div class="dash-header">
+      <div class="container">
+        <div class="dash-header-inner">
+          <div id="guildAvatarWrap"></div>
+          <div class="guild-info">
+            <h1 id="guildName">Loading...</h1>
+            <div class="guild-meta">
+              <span><i class="fa-solid fa-users"></i> <span id="memberCount">—</span> Members</span>
+              <span><i class="fa-solid fa-circle text-green" style="color:var(--green)"></i> Bot Online</span>
+            </div>
+          </div>
+          <div class="user-chip" id="userChip"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="dash-grid">
+        <!-- Channels Sidebar -->
+        <div class="channels-panel">
+          <div class="channels-panel-head">
+            <h3><i class="fa-solid fa-list-ul" style="color:var(--purple);margin-right:8px;"></i> Channels</h3>
+            <span id="chCount" style="font-size:0.78rem;color:var(--text2);"></span>
+          </div>
+          <div class="channel-search">
+            <input type="text" id="chSearch" placeholder="🔍 Search channel..." oninput="filterChannels()">
+          </div>
+          <div class="channels-list" id="channelList">
+            <div style="padding:20px;text-align:center;color:var(--text2);">
+              <div class="loader"></div>
+              <p style="margin-top:12px;font-size:0.85rem;">Loading channels...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="clear-panel">
+          <!-- No channel selected -->
+          <div id="noChannelView" class="no-channel">
+            <i class="fa-solid fa-hashtag"></i>
+            <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">Channel Select Karein</h3>
+            <p style="font-size:0.88rem;">Left side se koi channel select karein jiske messages clear karne hain.</p>
+          </div>
+
+          <!-- Channel selected view -->
+          <div id="channelView" style="display:none;">
+            <div class="clear-panel-head">
+              <h2>🗑️ Messages Clear Karein</h2>
+              <div class="ch-name"><i class="fa-solid fa-hashtag"></i> <span id="selectedChName">—</span></div>
+            </div>
+            <div class="clear-body">
+              <!-- Quick Clear Buttons -->
+              <p style="font-size:0.85rem;color:var(--text2);margin-bottom:16px;">Quick Actions:</p>
+              <div class="clear-quick">
+                <button class="quick-btn" onclick="confirmClear(10)">
+                  <i class="fa-solid fa-trash-can"></i> 10
+                  <span>messages</span>
+                </button>
+                <button class="quick-btn" onclick="confirmClear(25)">
+                  <i class="fa-solid fa-trash-can"></i> 25
+                  <span>messages</span>
+                </button>
+                <button class="quick-btn" onclick="confirmClear(50)">
+                  <i class="fa-solid fa-trash-can"></i> 50
+                  <span>messages</span>
+                </button>
+                <button class="quick-btn" onclick="confirmClear(100)">
+                  <i class="fa-solid fa-trash-can"></i> 100
+                  <span>messages</span>
+                </button>
+                <button class="quick-btn" onclick="confirmClear(250)">
+                  <i class="fa-solid fa-trash-can"></i> 250
+                  <span>messages</span>
+                </button>
+                <button class="quick-btn" onclick="confirmClear(500)" style="border-color:var(--red);color:var(--red);">
+                  <i class="fa-solid fa-fire"></i> 500
+                  <span>MAX</span>
+                </button>
+              </div>
+
+              <!-- Custom Amount -->
+              <div class="custom-clear">
+                <h4><i class="fa-solid fa-sliders" style="color:var(--purple);margin-right:8px;"></i> Custom Amount</h4>
+                <div class="input-row">
+                  <input type="number" id="customAmt" min="1" max="500" value="10" placeholder="Amount">
+                  <button class="btn btn-danger" onclick="confirmClear(parseInt(document.getElementById('customAmt').value))">
+                    <i class="fa-solid fa-trash"></i> Clear
+                  </button>
+                </div>
+              </div>
+
+              <!-- Action Log -->
+              <div class="action-log">
+                <h4><i class="fa-solid fa-terminal"></i> Action Log</h4>
+                <div id="logEntries">
+                  <div class="log-entry"><span class="log-time">—</span> Dashboard ready. Channel select karein.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div class="confirm-modal" id="confirmModal">
+    <div class="confirm-box">
+      <div class="warn-icon">⚠️</div>
+      <h3>Sure hain aap?</h3>
+      <p id="confirmText">Aap <strong id="confirmCount"></strong> messages delete karne wale hain <strong>#<span id="confirmCh"></span></strong> se. Yeh action undo nahi ho sakta!</p>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-danger" id="confirmYesBtn" onclick="executeClear()">
+          <i class="fa-solid fa-trash"></i> Haan, Delete Karo!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <script>
+    const CLIENT_ID = '1539145323048599625';
+    const API_BASE  = window.location.origin; // same server
+
+    let accessToken   = null;
+    let selectedCh    = null; // {id, name}
+    let pendingAmount = 0;
+    let allChannels   = []; // flat list for search
+
+    // ── Toast ──────────────────────────────────────────────────────────────
+    function toast(msg, type = 'info') {
+      const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+      const wrap = document.getElementById('toastWrap');
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+      wrap.appendChild(el);
+      setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(10px)'; el.style.transition = 'all 0.3s'; setTimeout(() => el.remove(), 300); }, 3500);
+    }
+
+    // ── Log ────────────────────────────────────────────────────────────────
+    function addLog(msg, type = '') {
+      const now = new Date();
+      const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      const container = document.getElementById('logEntries');
+      const el = document.createElement('div');
+      el.className = `log-entry ${type}`;
+      el.innerHTML = `<span class="log-time">${t}</span> ${msg}`;
+      container.appendChild(el);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // ── Discord OAuth Login ────────────────────────────────────────────────
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      const redirectUri = encodeURIComponent(window.location.origin + '/admin.html');
+      const url = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&response_type=token&scope=identify%20guilds&redirect_uri=${redirectUri}`;
+      window.location.href = url;
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('xon_admin_token');
+      window.location.reload();
+    });
+
+    // ── Handle OAuth Return ────────────────────────────────────────────────
+    async function init() {
+      // Check token from URL hash (after OAuth redirect)
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token=')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const tok = params.get('access_token');
+        if (tok) {
+          localStorage.setItem('xon_admin_token', tok);
+          window.history.replaceState(null, null, '/admin.html');
+        }
+      }
+
+      const savedToken = localStorage.getItem('xon_admin_token');
+      if (!savedToken) {
+        document.getElementById('loginWall').style.display = 'flex';
+        return;
+      }
+
+      accessToken = savedToken;
+      await loadDashboard();
+    }
+
+    // ── Load Dashboard ─────────────────────────────────────────────────────
+    async function loadDashboard() {
+      document.getElementById('loginWall').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('logoutBtn').style.display = 'flex';
+
+      // Load guild info (public)
+      try {
+        const res = await fetch(`${API_BASE}/api/guild`);
+        const guild = await res.json();
+        if (res.ok) {
+          document.getElementById('guildName').textContent = guild.name;
+          document.getElementById('memberCount').textContent = guild.member_count?.toLocaleString() || '—';
+          const wrap = document.getElementById('guildAvatarWrap');
+          if (guild.icon) {
+            wrap.innerHTML = `<img src="${guild.icon}" class="guild-avatar" alt="icon">`;
+          } else {
+            wrap.innerHTML = `<div class="guild-avatar-placeholder">${guild.name.charAt(0)}</div>`;
+          }
+        }
+      } catch (e) { console.warn('Guild info error:', e); }
+
+      // Load channels (requires admin token)
+      await loadChannels();
+    }
+
+    async function loadChannels() {
+      try {
+        const res = await fetch(`${API_BASE}/api/channels`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const data = await res.json();
+
+        if (res.status === 403) {
+          document.getElementById('channelList').innerHTML = `
+            <div style="padding:24px;text-align:center;color:var(--red);">
+              <i class="fa-solid fa-ban" style="font-size:2rem;margin-bottom:12px;"></i>
+              <p style="font-weight:700;">Access Denied</p>
+              <p style="font-size:0.82rem;margin-top:6px;color:var(--text2);">Aap XON server ke Admin/Owner nahi hain.</p>
+              <button class="btn btn-ghost btn-sm" style="margin-top:16px" onclick="logout()">Logout & Try Again</button>
+            </div>`;
+          toast('Access denied — Admin/Owner permission required', 'error');
+          return;
+        }
+
+        if (!res.ok) {
+          document.getElementById('channelList').innerHTML = `<div style="padding:20px;text-align:center;color:var(--text2);">Bot abhi ready nahi hai. Thodi der mein try karein.</div>`;
+          return;
+        }
+
+        // Show user chip
+        const u = data.user;
+        if (u) {
+          await renderUserChip(u.id);
+        }
+
+        // Render channels
+        const categories = data.channels || [];
+        let total = 0;
+        allChannels = [];
+
+        const list = document.getElementById('channelList');
+        list.innerHTML = '';
+
+        categories.forEach(cat => {
+          const catEl = document.createElement('div');
+          catEl.className = 'ch-category';
+          catEl.textContent = cat.category.toUpperCase();
+          list.appendChild(catEl);
+
+          cat.channels.forEach(ch => {
+            total++;
+            allChannels.push(ch);
+            const el = document.createElement('div');
+            el.className = 'ch-item';
+            el.id = `ch-${ch.id}`;
+            el.innerHTML = `<i class="fa-solid fa-hashtag"></i> ${ch.name}`;
+            el.onclick = () => selectChannel(ch);
+            list.appendChild(el);
+          });
+        });
+
+        document.getElementById('chCount').textContent = `${total} channels`;
+        toast(`${total} channels load ho gaye!`, 'success');
+
+      } catch (e) {
+        console.error(e);
+        document.getElementById('channelList').innerHTML = `<div style="padding:20px;text-align:center;color:var(--text2);">Connection error. Page reload karein.</div>`;
+        toast('Channels load karne mein error', 'error');
+      }
+    }
+
+    async function renderUserChip(userId) {
+      try {
+        const res = await fetch('https://discord.com/api/users/@me', {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const u = await res.json();
+        const avatar = u.avatar
+          ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png`
+          : `https://cdn.discordapp.com/embed/avatars/0.png`;
+        const name = u.global_name || u.username;
+        document.getElementById('userChip').innerHTML = `
+          <img src="${avatar}" alt="avatar">
+          <span class="uname">${name}</span>
+          <span class="role-tag">ADMIN</span>
+        `;
+      } catch (e) {}
+    }
+
+    // ── Channel Select ─────────────────────────────────────────────────────
+    function selectChannel(ch) {
+      selectedCh = ch;
+      document.querySelectorAll('.ch-item').forEach(el => el.classList.remove('active'));
+      const el = document.getElementById(`ch-${ch.id}`);
+      if (el) el.classList.add('active');
+
+      document.getElementById('noChannelView').style.display = 'none';
+      document.getElementById('channelView').style.display = 'block';
+      document.getElementById('selectedChName').textContent = ch.name;
+      document.getElementById('logEntries').innerHTML = '';
+      addLog(`Channel selected: <strong>#${ch.name}</strong>`, 'success');
+    }
+
+    // ── Channel Search ─────────────────────────────────────────────────────
+    function filterChannels() {
+      const q = document.getElementById('chSearch').value.toLowerCase();
+      document.querySelectorAll('.ch-item').forEach(el => {
+        const name = el.textContent.toLowerCase();
+        el.style.display = name.includes(q) ? '' : 'none';
+      });
+    }
+
+    // ── Confirm Modal ──────────────────────────────────────────────────────
+    function confirmClear(amount) {
+      if (!selectedCh) { toast('Pehle channel select karein!', 'error'); return; }
+      if (!amount || amount < 1) { toast('Valid amount enter karein (1–500)', 'error'); return; }
+      pendingAmount = Math.min(amount, 500);
+      document.getElementById('confirmCount').textContent = pendingAmount;
+      document.getElementById('confirmCh').textContent = selectedCh.name;
+      document.getElementById('confirmModal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('confirmModal').classList.remove('open');
+    }
+
+    // ── Execute Clear ──────────────────────────────────────────────────────
+    async function executeClear() {
+      closeModal();
+      if (!selectedCh || !accessToken) return;
+
+      const btn = document.getElementById('confirmYesBtn');
+      btn.innerHTML = '<div class="loader"></div> Clearing...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/clear`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ channel_id: selectedCh.id, amount: pendingAmount })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          toast(`✅ ${data.deleted} messages #${data.channel} se delete ho gaye!`, 'success');
+          addLog(`🗑️ <strong>${data.deleted}</strong> messages deleted from <strong>#${data.channel}</strong>`, 'success');
+        } else {
+          toast(data.error || 'Clear karne mein error aaya', 'error');
+          addLog(`❌ Error: ${data.error || 'Unknown error'}`, 'err');
+        }
+      } catch (e) {
+        toast('Network error — bot online hai?', 'error');
+        addLog(`❌ Network error: ${e.message}`, 'err');
+      }
+
+      btn.innerHTML = '<i class="fa-solid fa-trash"></i> Haan, Delete Karo!';
+      btn.disabled = false;
+    }
+
+    // Close modal on outside click
+    document.getElementById('confirmModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+
+    function logout() {
+      localStorage.removeItem('xon_admin_token');
+      window.location.reload();
+    }
+
+    // Boot
+    init();
+  </script>
+</body>
+</html>

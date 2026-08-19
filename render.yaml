@@ -13,6 +13,7 @@ services:
         value: "!"
       - key: DISCORD_TOKEN
         sync: false
-      # BUG-07 FIX: Explicit URL for anti-sleep keep-alive ping
       - key: RENDER_EXTERNAL_URL
         value: "https://xon-music-bot.onrender.com"
+      - key: XON_GUILD_ID
+        value: "1413956596035489864"

@@ -1,26 +1,171 @@
 import asyncio
+import json
 import os
 import site
 import sys
 import threading
 import http.server
 import socketserver
+import urllib.request
 from dotenv import load_dotenv
 
 load_dotenv()
 
 # ==============================================================================
-# 1. Background Web Server for Render Health Check & Dashboard
+# 1. Background Web Server — Static Files + Admin API Routes
 # ==============================================================================
 PORT = int(os.environ.get("PORT", 8000))
 WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+XON_GUILD_ID = os.environ.get("XON_GUILD_ID", "")
+
+# Shared bot reference (set after bot boots)
+bot_instance = None
+
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=WEB_DIR, **kwargs)
 
     def log_message(self, format, *args):
-        pass
+        pass  # Suppress access logs
+
+    def _send_json(self, data, status=200):
+        body = json.dumps(data).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _send_cors_preflight(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.end_headers()
+
+    def _verify_discord_admin(self, access_token):
+        """Verify user is admin/owner of XON guild via Discord API."""
+        if not access_token or not XON_GUILD_ID:
+            return False, None
+        try:
+            # Get user guilds
+            req = urllib.request.Request(
+                "https://discord.com/api/users/@me/guilds",
+                headers={"Authorization": f"Bearer {access_token}", "User-Agent": "XONBot/2.0"}
+            )
+            with urllib.request.urlopen(req, timeout=5) as res:
+                guilds = json.loads(res.read().decode("utf-8"))
+
+            # Get user info
+            req2 = urllib.request.Request(
+                "https://discord.com/api/users/@me",
+                headers={"Authorization": f"Bearer {access_token}", "User-Agent": "XONBot/2.0"}
+            )
+            with urllib.request.urlopen(req2, timeout=5) as res2:
+                user = json.loads(res2.read().decode("utf-8"))
+
+            for g in guilds:
+                if str(g["id"]) == str(XON_GUILD_ID):
+                    perms = int(g.get("permissions", 0))
+                    is_owner = g.get("owner", False)
+                    is_admin = (perms & 0x8) == 0x8  # ADMINISTRATOR bit
+                    is_manage = (perms & 0x20) == 0x20  # MANAGE_GUILD bit
+                    if is_owner or is_admin or is_manage:
+                        return True, user
+            return False, user
+        except Exception as e:
+            print(f"[!] Admin verify error: {e}")
+            return False, None
+
+    def do_OPTIONS(self):
+        self._send_cors_preflight()
+
+    def do_GET(self):
+        # ── API: Guild Info ──────────────────────────────────────────────
+        if self.path == "/api/guild":
+            if not bot_instance or not XON_GUILD_ID:
+                return self._send_json({"error": "Bot not ready or guild not configured"}, 503)
+            guild = bot_instance.get_guild(int(XON_GUILD_ID))
+            if not guild:
+                return self._send_json({"error": "Guild not found"}, 404)
+            icon = f"https://cdn.discordapp.com/icons/{guild.id}/{guild.icon}.png" if guild.icon else None
+            return self._send_json({
+                "id": str(guild.id),
+                "name": guild.name,
+                "icon": icon,
+                "member_count": guild.member_count,
+                "owner_id": str(guild.owner_id)
+            })
+
+        # ── API: Channels List ──────────────────────────────────────────
+        if self.path == "/api/channels":
+            auth = self.headers.get("Authorization", "").replace("Bearer ", "")
+            is_admin, user = self._verify_discord_admin(auth)
+            if not is_admin:
+                return self._send_json({"error": "Access denied. XON server Admin/Owner required."}, 403)
+            if not bot_instance or not XON_GUILD_ID:
+                return self._send_json({"error": "Bot not ready"}, 503)
+            guild = bot_instance.get_guild(int(XON_GUILD_ID))
+            if not guild:
+                return self._send_json({"error": "Guild not found"}, 404)
+            channels = []
+            for cat in guild.categories:
+                cat_channels = []
+                for ch in cat.text_channels:
+                    cat_channels.append({"id": str(ch.id), "name": ch.name, "position": ch.position})
+                if cat_channels:
+                    channels.append({"category": cat.name, "channels": sorted(cat_channels, key=lambda x: x["position"])})
+            # Uncategorized channels
+            uncategorized = [
+                {"id": str(ch.id), "name": ch.name, "position": ch.position}
+                for ch in guild.text_channels if ch.category is None
+            ]
+            if uncategorized:
+                channels.insert(0, {"category": "General", "channels": sorted(uncategorized, key=lambda x: x["position"])})
+            return self._send_json({"channels": channels, "user": {"id": user["id"], "username": user.get("global_name") or user["username"]}})
+
+        # Serve static files
+        super().do_GET()
+
+    def do_POST(self):
+        # ── API: Clear Messages ──────────────────────────────────────────
+        if self.path == "/api/clear":
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                body = json.loads(self.rfile.read(length).decode("utf-8"))
+                channel_id = body.get("channel_id")
+                amount = min(int(body.get("amount", 10)), 500)
+                auth = self.headers.get("Authorization", "").replace("Bearer ", "")
+
+                is_admin, user = self._verify_discord_admin(auth)
+                if not is_admin:
+                    return self._send_json({"error": "Access denied."}, 403)
+
+                if not bot_instance or not channel_id:
+                    return self._send_json({"error": "Bot not ready or missing channel_id"}, 400)
+
+                channel = bot_instance.get_channel(int(channel_id))
+                if not channel:
+                    return self._send_json({"error": "Channel not found"}, 404)
+
+                # Run purge in the bot's event loop
+                future = asyncio.run_coroutine_threadsafe(
+                    channel.purge(limit=amount),
+                    bot_instance.loop
+                )
+                deleted = future.result(timeout=30)
+                uname = user.get("global_name") or user.get("username", "Unknown")
+                print(f"[🗑️] {uname} cleared {len(deleted)} msgs from #{channel.name} via web dashboard")
+                return self._send_json({"success": True, "deleted": len(deleted), "channel": channel.name})
+
+            except Exception as e:
+                print(f"[!] Clear API error: {e}")
+                return self._send_json({"error": str(e)}, 500)
+
+        self.send_response(404)
+        self.end_headers()
 
 def run_web_server():
     socketserver.TCPServer.allow_reuse_address = True
@@ -84,6 +229,9 @@ bot = commands.Bot(
 
 @bot.event
 async def on_ready():
+    global bot_instance
+    bot_instance = bot  # Expose bot to web API handler
+
     print("=" * 50)
     print(f"[+] XON Music Bot ONLINE on Render: {bot.user.name} (ID: {bot.user.id})")
     print(f"[+] Connected Servers: {len(bot.guilds)}")
