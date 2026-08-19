@@ -140,9 +140,17 @@ async def main():
         except Exception as e:
             print(f"[-] Failed to load cogs.music: {e}")
 
+        # Load the moderation cog
+        try:
+            await bot.load_extension("cogs.moderation")
+            print("[+] Cog 'cogs.moderation' successfully loaded.")
+        except Exception as e:
+            print(f"[-] Failed to load cogs.moderation: {e}")
+
         # Start the bot
         if TOKEN:
             await bot.start(TOKEN)
+
 
 
 if __name__ == "__main__":
