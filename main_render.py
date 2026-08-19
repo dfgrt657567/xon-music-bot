@@ -280,6 +280,11 @@ async def main():
         except Exception as e:
             print(f"[-] Failed to load cogs.moderation: {e}")
 
+        try:
+            await bot.load_extension("cogs.welcome")
+            print("[+] Cog 'cogs.welcome' successfully loaded.")
+        except Exception as e:
+            print(f"[-] Failed to load cogs.welcome: {e}")
 
         if TOKEN:
             await bot.start(TOKEN)
