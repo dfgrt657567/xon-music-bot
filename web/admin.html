@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XON Admin — Server Dashboard</title>
-  <meta name="description" content="XON Music Bot Admin Dashboard — Manage your server channels, clear messages, and more.">
+  <title>XON Admin â€” Server Dashboard</title>
+  <meta name="description" content="XON Music Bot Admin Dashboard â€” Manage your server channels, clear messages, and more.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -112,7 +112,7 @@
     /* Main grid */
     .dash-grid { display: grid; grid-template-columns: 300px 1fr; gap: 24px; padding-bottom: 48px; }
 
-    /* Sidebar — channels */
+    /* Sidebar â€” channels */
     .channels-panel {
       background: var(--card);
       border: 1px solid var(--border);
@@ -146,7 +146,7 @@
     .ch-item.active { background: rgba(139,92,246,0.12); color: var(--neon); border-left-color: var(--purple); }
     .ch-item i { font-size: 0.85rem; width: 16px; text-align: center; }
 
-    /* Right panel — clear controls */
+    /* Right panel â€” clear controls */
     .clear-panel {
       background: var(--card);
       border: 1px solid var(--border);
@@ -245,7 +245,7 @@
       .login-card { padding: 32px 24px; }
     }
 
-    /* ── Tab Navigation ─────────────────────────── */
+    /* â”€â”€ Tab Navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .tab-nav {
       display: flex; gap: 8px; margin-bottom: 20px;
       border-bottom: 1px solid var(--border); padding-bottom: 0;
@@ -260,7 +260,7 @@
     .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
     .tab-btn.active { color: var(--purple); border-bottom-color: var(--purple); background: rgba(139,92,246,0.08); }
 
-    /* ── Anti-Spam Panel ────────────────────────── */
+    /* â”€â”€ Anti-Spam Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .spam-panel { max-width: 720px; }
     .spam-header { margin-bottom: 20px; }
     .spam-config-card {
@@ -336,7 +336,7 @@
         <div class="login-feature"><i class="fa-solid fa-check-circle"></i> All server channels dekho</div>
         <div class="login-feature"><i class="fa-solid fa-check-circle"></i> Kisi bhi channel ke messages clear karo</div>
         <div class="login-feature"><i class="fa-solid fa-check-circle"></i> Real-time action log</div>
-        <div class="login-feature"><i class="fa-solid fa-lock"></i> Sirf Admin/Owner access — secure</div>
+        <div class="login-feature"><i class="fa-solid fa-lock"></i> Sirf Admin/Owner access â€” secure</div>
       </div>
 
       <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:0.83rem;color:#fbbf24;display:flex;gap:8px;align-items:flex-start;">
@@ -362,7 +362,7 @@
           <div class="guild-info">
             <h1 id="guildName">Loading...</h1>
             <div class="guild-meta">
-              <span><i class="fa-solid fa-users"></i> <span id="memberCount">—</span> Members</span>
+              <span><i class="fa-solid fa-users"></i> <span id="memberCount">â€”</span> Members</span>
               <span><i class="fa-solid fa-circle text-green" style="color:var(--green)"></i> Bot Online</span>
             </div>
           </div>
@@ -392,7 +392,7 @@
               <span id="chCount" style="font-size:0.78rem;color:var(--text2);"></span>
             </div>
             <div class="channel-search">
-              <input type="text" id="chSearch" placeholder="🔍 Search channel..." oninput="filterChannels()">
+              <input type="text" id="chSearch" placeholder="ðŸ” Search channel..." oninput="filterChannels()">
             </div>
             <div class="channels-list" id="channelList">
               <div style="padding:20px;text-align:center;color:var(--text2);">
@@ -411,8 +411,8 @@
             </div>
             <div id="channelView" style="display:none;">
               <div class="clear-panel-head">
-                <h2>🗑️ Messages Clear Karein</h2>
-                <div class="ch-name"><i class="fa-solid fa-hashtag"></i> <span id="selectedChName">—</span></div>
+                <h2>ðŸ—‘ï¸ Messages Clear Karein</h2>
+                <div class="ch-name"><i class="fa-solid fa-hashtag"></i> <span id="selectedChName">â€”</span></div>
               </div>
               <div class="clear-body">
                 <p style="font-size:0.85rem;color:var(--text2);margin-bottom:16px;">Quick Actions:</p>
@@ -436,7 +436,7 @@
                 <div class="action-log">
                   <h4><i class="fa-solid fa-terminal"></i> Action Log</h4>
                   <div id="logEntries">
-                    <div class="log-entry"><span class="log-time">—</span> Dashboard ready. Channel select karein.</div>
+                    <div class="log-entry"><span class="log-time">â€”</span> Dashboard ready. Channel select karein.</div>
                   </div>
                 </div>
               </div>
@@ -450,7 +450,7 @@
         <div class="spam-panel">
           <div class="spam-header">
             <div>
-              <h2 style="font-size:1.2rem;font-weight:800;">🛡️ Anti-Spam System</h2>
+              <h2 style="font-size:1.2rem;font-weight:800;">ðŸ›¡ï¸ Anti-Spam System</h2>
               <p style="color:var(--text2);font-size:0.88rem;margin-top:4px;">Channels select karein jahan spam protection enable karni hai. Spam karne par auto-timeout milega.</p>
             </div>
           </div>
@@ -461,14 +461,14 @@
 
             <div class="spam-form">
               <div class="form-group">
-                <label>📢 Channel Select Karein</label>
+                <label>ðŸ“¢ Channel Select Karein</label>
                 <select id="spamChannelSelect">
                   <option value="">-- Loading channels... --</option>
                 </select>
               </div>
               <div class="spam-controls">
                 <div class="form-group">
-                  <label>💬 Spam Threshold</label>
+                  <label>ðŸ’¬ Spam Threshold</label>
                   <div style="display:flex;align-items:center;gap:8px;">
                     <input type="range" id="spamThreshold" min="2" max="15" value="5" oninput="document.getElementById('thresholdVal').textContent=this.value" style="flex:1;">
                     <span id="thresholdVal" class="val-badge">5</span>
@@ -476,7 +476,7 @@
                   </div>
                 </div>
                 <div class="form-group">
-                  <label>⏱️ Detection Window</label>
+                  <label>â±ï¸ Detection Window</label>
                   <div style="display:flex;align-items:center;gap:8px;">
                     <input type="range" id="spamWindow" min="2" max="30" value="5" oninput="document.getElementById('windowVal').textContent=this.value" style="flex:1;">
                     <span id="windowVal" class="val-badge">5</span>
@@ -484,7 +484,7 @@
                   </div>
                 </div>
                 <div class="form-group">
-                  <label>🔇 Timeout Duration</label>
+                  <label>ðŸ”‡ Timeout Duration</label>
                   <div class="timeout-grid">
                     <button class="timeout-pill active" data-val="30" onclick="selectTimeout(this)">30s</button>
                     <button class="timeout-pill" data-val="60" onclick="selectTimeout(this)">1 min</button>
@@ -518,7 +518,7 @@
 
           <!-- How it works -->
           <div class="spam-config-card" style="margin-top:20px;background:rgba(139,92,246,0.05);border-color:rgba(139,92,246,0.2);">
-            <h3 style="font-size:0.88rem;font-weight:700;margin-bottom:12px;color:var(--neon);">ℹ️ Kaise Kaam Karta Hai</h3>
+            <h3 style="font-size:0.88rem;font-weight:700;margin-bottom:12px;color:var(--neon);">â„¹ï¸ Kaise Kaam Karta Hai</h3>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.82rem;color:var(--text2);">
               <div><i class="fa-solid fa-eye" style="color:var(--purple);margin-right:6px;"></i> Bot messages monitor karta hai</div>
               <div><i class="fa-solid fa-bolt" style="color:var(--yellow);margin-right:6px;"></i> Threshold exceed hone par action</div>
@@ -534,7 +534,7 @@
   <!-- Confirm Modal -->
   <div class="confirm-modal" id="confirmModal">
     <div class="confirm-box">
-      <div class="warn-icon">⚠️</div>
+      <div class="warn-icon">âš ï¸</div>
       <h3>Sure hain aap?</h3>
       <p id="confirmText">Aap <strong id="confirmCount"></strong> messages delete karne wale hain <strong>#<span id="confirmCh"></span></strong> se. Yeh action undo nahi ho sakta!</p>
       <div class="confirm-actions">
@@ -558,9 +558,9 @@
     let pendingAmount = 0;
     let allChannels   = []; // flat list for search
 
-    // ── Toast ──────────────────────────────────────────────────────────────
+    // â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function toast(msg, type = 'info') {
-      const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+      const icons = { success: 'âœ…', error: 'âŒ', info: 'â„¹ï¸' };
       const wrap = document.getElementById('toastWrap');
       const el = document.createElement('div');
       el.className = `toast ${type}`;
@@ -569,7 +569,7 @@
       setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(10px)'; el.style.transition = 'all 0.3s'; setTimeout(() => el.remove(), 300); }, 3500);
     }
 
-    // ── Log ────────────────────────────────────────────────────────────────
+    // â”€â”€ Log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function addLog(msg, type = '') {
       const now = new Date();
       const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
@@ -581,7 +581,7 @@
       container.scrollTop = container.scrollHeight;
     }
 
-    // ── Discord OAuth Login ────────────────────────────────────────────────
+    // â”€â”€ Discord OAuth Login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function getOAuthUrl(forceSwitch = false) {
       const redirectUri = encodeURIComponent(window.location.origin + '/admin.html');
       // prompt=consent forces Discord to always show account chooser
@@ -593,18 +593,18 @@
       window.location.href = getOAuthUrl(false);
     });
 
-    // Switch Account — clears saved token + forces account chooser
+    // Switch Account â€” clears saved token + forces account chooser
     document.getElementById('loginBtnSwitch').addEventListener('click', () => {
-      localStorage.removeItem('xon_admin_token');
-      window.location.href = getOAuthUrl(true); // prompt=consent → Discord shows account selector
+      sessionStorage.removeItem('xon_admin_token');
+      window.location.href = getOAuthUrl(true); // prompt=consent â†’ Discord shows account selector
     });
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('xon_admin_token');
+      sessionStorage.removeItem('xon_admin_token');
       window.location.reload();
     });
 
-    // ── Handle OAuth Return ────────────────────────────────────────────────
+    // â”€â”€ Handle OAuth Return â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function init() {
       // Check token from URL hash (after OAuth redirect)
       const hash = window.location.hash;
@@ -612,12 +612,12 @@
         const params = new URLSearchParams(hash.substring(1));
         const tok = params.get('access_token');
         if (tok) {
-          localStorage.setItem('xon_admin_token', tok);
+          sessionStorage.setItem('xon_admin_token', tok);
           window.history.replaceState(null, null, '/admin.html');
         }
       }
 
-      const savedToken = localStorage.getItem('xon_admin_token');
+      const savedToken = sessionStorage.getItem('xon_admin_token');
       if (!savedToken) {
         document.getElementById('loginWall').style.display = 'flex';
         return;
@@ -627,7 +627,7 @@
       await loadDashboard();
     }
 
-    // ── Load Dashboard ─────────────────────────────────────────────────────
+    // â”€â”€ Load Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function loadDashboard() {
       document.getElementById('loginWall').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
@@ -639,7 +639,7 @@
         const guild = await res.json();
         if (res.ok) {
           document.getElementById('guildName').textContent = guild.name;
-          document.getElementById('memberCount').textContent = guild.member_count?.toLocaleString() || '—';
+          document.getElementById('memberCount').textContent = guild.member_count?.toLocaleString() || 'â€”';
           const wrap = document.getElementById('guildAvatarWrap');
           if (guild.icon) {
             wrap.innerHTML = `<img src="${guild.icon}" class="guild-avatar" alt="icon">`;
@@ -668,7 +668,7 @@
               <p style="font-size:0.82rem;margin-top:6px;color:var(--text2);">Aap XON server ke Admin/Owner nahi hain.</p>
               <button class="btn btn-ghost btn-sm" style="margin-top:16px" onclick="logout()">Logout & Try Again</button>
             </div>`;
-          toast('Access denied — Admin/Owner permission required', 'error');
+          toast('Access denied â€” Admin/Owner permission required', 'error');
           return;
         }
 
@@ -737,7 +737,7 @@
       } catch (e) {}
     }
 
-    // ── Channel Select ─────────────────────────────────────────────────────
+    // â”€â”€ Channel Select â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function selectChannel(ch) {
       selectedCh = ch;
       document.querySelectorAll('.ch-item').forEach(el => el.classList.remove('active'));
@@ -751,7 +751,7 @@
       addLog(`Channel selected: <strong>#${ch.name}</strong>`, 'success');
     }
 
-    // ── Channel Search ─────────────────────────────────────────────────────
+    // â”€â”€ Channel Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function filterChannels() {
       const q = document.getElementById('chSearch').value.toLowerCase();
       document.querySelectorAll('.ch-item').forEach(el => {
@@ -760,10 +760,10 @@
       });
     }
 
-    // ── Confirm Modal ──────────────────────────────────────────────────────
+    // â”€â”€ Confirm Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function confirmClear(amount) {
       if (!selectedCh) { toast('Pehle channel select karein!', 'error'); return; }
-      if (!amount || amount < 1) { toast('Valid amount enter karein (1–500)', 'error'); return; }
+      if (!amount || amount < 1) { toast('Valid amount enter karein (1â€“500)', 'error'); return; }
       pendingAmount = Math.min(amount, 500);
       document.getElementById('confirmCount').textContent = pendingAmount;
       document.getElementById('confirmCh').textContent = selectedCh.name;
@@ -774,7 +774,7 @@
       document.getElementById('confirmModal').classList.remove('open');
     }
 
-    // ── Execute Clear ──────────────────────────────────────────────────────
+    // â”€â”€ Execute Clear â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function executeClear() {
       closeModal();
       if (!selectedCh || !accessToken) return;
@@ -795,15 +795,15 @@
         const data = await res.json();
 
         if (res.ok && data.success) {
-          toast(`✅ ${data.deleted} messages #${data.channel} se delete ho gaye!`, 'success');
-          addLog(`🗑️ <strong>${data.deleted}</strong> messages deleted from <strong>#${data.channel}</strong>`, 'success');
+          toast(`âœ… ${data.deleted} messages #${data.channel} se delete ho gaye!`, 'success');
+          addLog(`ðŸ—‘ï¸ <strong>${data.deleted}</strong> messages deleted from <strong>#${data.channel}</strong>`, 'success');
         } else {
           toast(data.error || 'Clear karne mein error aaya', 'error');
-          addLog(`❌ Error: ${data.error || 'Unknown error'}`, 'err');
+          addLog(`âŒ Error: ${data.error || 'Unknown error'}`, 'err');
         }
       } catch (e) {
-        toast('Network error — bot online hai?', 'error');
-        addLog(`❌ Network error: ${e.message}`, 'err');
+        toast('Network error â€” bot online hai?', 'error');
+        addLog(`âŒ Network error: ${e.message}`, 'err');
       }
 
       btn.innerHTML = '<i class="fa-solid fa-trash"></i> Haan, Delete Karo!';
@@ -816,11 +816,11 @@
     });
 
     function logout() {
-      localStorage.removeItem('xon_admin_token');
+      sessionStorage.removeItem('xon_admin_token');
       window.location.reload();
     }
 
-    // ── Tab Switching ────────────────────────────────────────────────────────
+    // â”€â”€ Tab Switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function switchTab(tabId, btn) {
       document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -829,14 +829,14 @@
       if (tabId === 'spamTab') populateSpamChannels();
     }
 
-    // ── Timeout Pill Select ──────────────────────────────────────────────────
+    // â”€â”€ Timeout Pill Select â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function selectTimeout(btn) {
       document.querySelectorAll('.timeout-pill').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('spamTimeout').value = btn.dataset.val;
     }
 
-    // ── Populate Anti-Spam Channel Dropdown ──────────────────────────────────
+    // â”€â”€ Populate Anti-Spam Channel Dropdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function populateSpamChannels() {
       const sel = document.getElementById('spamChannelSelect');
       sel.innerHTML = '<option value="">-- Channel select karein --</option>';
@@ -849,7 +849,7 @@
       loadSpamConfig();
     }
 
-    // ── Load Spam Config from API ────────────────────────────────────────────
+    // â”€â”€ Load Spam Config from API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function loadSpamConfig() {
       try {
         const res = await fetch(`${API_BASE}/api/antispam/config`, {
@@ -861,7 +861,7 @@
       } catch (e) { /* silent */ }
     }
 
-    // ── Render Protected Channels List ───────────────────────────────────────
+    // â”€â”€ Render Protected Channels List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function renderProtectedChannels(channels) {
       const wrap = document.getElementById('spamChannelsList');
       const entries = Object.entries(channels);
@@ -873,7 +873,7 @@
         const ch = allChannels.find(c => c.id === chId);
         const name = ch ? `#${ch.name}` : `#unknown`;
         const status = cfg.enabled ? 'on' : 'off';
-        const statusText = cfg.enabled ? '✅ ON' : '❌ OFF';
+        const statusText = cfg.enabled ? 'âœ… ON' : 'âŒ OFF';
         return `<div class="spam-ch-row">
           <div class="ch-info">
             <span style="color:var(--purple);">#</span>
@@ -881,13 +881,13 @@
             <span class="spam-status ${status}">${statusText}</span>
           </div>
           <div style="font-size:0.78rem;color:var(--text2);">
-            ${cfg.threshold}msgs / ${cfg.window}s → ${cfg.timeout_secs}s timeout
+            ${cfg.threshold}msgs / ${cfg.window}s â†’ ${cfg.timeout_secs}s timeout
           </div>
         </div>`;
       }).join('');
     }
 
-    // ── Save Spam Config ──────────────────────────────────────────────────────
+    // â”€â”€ Save Spam Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function saveSpamConfig(enabled) {
       const chId = document.getElementById('spamChannelSelect').value;
       if (!chId) return toast('Channel select karein!', 'error');
@@ -922,3 +922,4 @@
   </script>
 </body>
 </html>
+

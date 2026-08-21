@@ -8,3 +8,7 @@ env/
 bin/
 test.py
 token.txt
+bot_err.txt
+bot_out.txt
+test_url.py
+antispam_config.json
