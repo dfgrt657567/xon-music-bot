@@ -2,7 +2,7 @@
 # Exit on error
 set -o errexit
 
-echo "📦 Installing Linux dependencies (FFmpeg)..."
+echo "📦 Installing Linux dependencies (FFmpeg + libsodium)..."
 # Render Linux environment: install static ffmpeg if not present
 mkdir -p bin
 if [ ! -f "bin/ffmpeg" ]; then
@@ -15,5 +15,12 @@ export PATH="$PWD/bin:$PATH"
 echo "🐍 Installing Python packages..."
 pip install --upgrade pip
 pip install -r requirements.txt
+
+# Force install PyNaCl for Discord voice support
+echo "🔊 Installing PyNaCl for voice support..."
+pip install --force-reinstall PyNaCl>=1.5.0
+
+# Verify voice dependencies
+python -c "import nacl; print(f'✅ PyNaCl {nacl.__version__} installed')" || echo "❌ PyNaCl install failed!"
 
 echo "✅ Build Complete!"
