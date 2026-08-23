@@ -327,6 +327,9 @@ async def anti_sleep_keepalive():
             print(f"[!] Anti-Sleep ping failed: {e}")
 
 async def main():
+    # Auto-update yt-dlp before starting bot
+    auto_update_packages()
+
     async with bot:
         try:
             await bot.load_extension("cogs.music")
@@ -356,6 +359,51 @@ async def main():
             await bot.start(TOKEN)
         else:
             print("[-] DISCORD_TOKEN is missing in Render Environment Variables!")
+
+
+def auto_update_packages():
+    """Auto-update yt-dlp and other packages on every bot startup."""
+    import subprocess
+    print("=" * 50)
+    print("[🔄] Auto-updating packages...")
+
+    # Update yt-dlp (most critical — YouTube changes frequently)
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"],
+            capture_output=True, text=True, timeout=120
+        )
+        if result.returncode == 0:
+            # Get installed version
+            try:
+                import importlib
+                import yt_dlp
+                importlib.reload(yt_dlp)
+                ver = yt_dlp.version.__version__
+                print(f"[✅] yt-dlp updated to v{ver}")
+            except Exception:
+                print("[✅] yt-dlp updated successfully")
+        else:
+            print(f"[⚠️] yt-dlp update warning: {result.stderr[:200]}")
+    except Exception as e:
+        print(f"[❌] yt-dlp auto-update failed: {e}")
+
+    # Update discord.py
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "discord.py"],
+            capture_output=True, text=True, timeout=120
+        )
+        if result.returncode == 0:
+            print("[✅] discord.py updated")
+        else:
+            print(f"[⚠️] discord.py update skipped")
+    except Exception:
+        pass
+
+    print("[🔄] Auto-update complete!")
+    print("=" * 50)
+
 
 if __name__ == "__main__":
     try:
