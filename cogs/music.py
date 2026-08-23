@@ -36,6 +36,14 @@ def get_ffmpeg_executable():
 FFMPEG_PATH = get_ffmpeg_executable()
 print(f"[+] Using FFmpeg: {FFMPEG_PATH}")
 
+# Auto-detect cookies.txt for YouTube authentication
+COOKIES_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cookies.txt')
+if os.path.exists(COOKIES_FILE):
+    print(f"[+] YouTube cookies found: {COOKIES_FILE}")
+else:
+    COOKIES_FILE = None
+    print("[!] No cookies.txt found — YouTube may show bot detection errors")
+
 # Primary yt-dlp config — Multi-client rotation to bypass bot detection
 ytdl_format_options = {
     'format': 'bestaudio/best',
@@ -57,12 +65,15 @@ ytdl_format_options = {
     },
     'extractor_args': {
         'youtube': {
-            # Use default + mediaconnect clients (best bypass for 2024+ bot detection)
             'player_client': ['default', 'mediaconnect', 'tv_embedded', 'android_vr'],
             'player_skip': ['web_creator', 'mweb'],
         }
     }
 }
+
+# Add cookies if available
+if COOKIES_FILE:
+    ytdl_format_options['cookiefile'] = COOKIES_FILE
 
 ffmpeg_options = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
