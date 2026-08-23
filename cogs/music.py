@@ -49,11 +49,17 @@ ytdl_format_options = {
     'no_warnings': True,
     'default_search': 'ytsearch1',
     'source_address': '0.0.0.0',
+    'age_limit': 100,
+    'geo_bypass': True,
+    'http_headers': {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+    },
     'extractor_args': {
         'youtube': {
-            # Rotate clients: tv + android handle Shorts & bot-checked videos best
-            'player_client': ['tv', 'android', 'ios', 'android_creator'],
-            'player_skip': ['web', 'web_creator', 'mweb'],
+            # Use default + mediaconnect clients (best bypass for 2024+ bot detection)
+            'player_client': ['default', 'mediaconnect', 'tv_embedded', 'android_vr'],
+            'player_skip': ['web_creator', 'mweb'],
         }
     }
 }

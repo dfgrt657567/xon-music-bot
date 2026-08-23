@@ -20,7 +20,12 @@ pip install -r requirements.txt
 echo "🔊 Installing PyNaCl for voice support..."
 pip install --force-reinstall PyNaCl>=1.5.0
 
-# Verify voice dependencies
+# Force latest yt-dlp for YouTube bypass
+echo "🎵 Force upgrading yt-dlp to latest..."
+pip install --upgrade yt-dlp
+
+# Verify dependencies
 python -c "import nacl; print(f'✅ PyNaCl {nacl.__version__} installed')" || echo "❌ PyNaCl install failed!"
+python -c "import yt_dlp; print(f'✅ yt-dlp {yt_dlp.version.__version__} installed')" || echo "❌ yt-dlp check failed!"
 
 echo "✅ Build Complete!"
