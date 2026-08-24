@@ -332,23 +332,38 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 except Exception as retry_err:
                     print(f"[!] Retry extraction also failed: {retry_err}")
 
-        # 3. Resilient fallback (oEmbed title + SoundCloud)
+        # 3. Resilient fallback (oEmbed title → YouTube search → SoundCloud)
         if not data or ('entries' in data and not data['entries']):
             search_term = None
             if video_id:
                 oembed_title = await loop.run_in_executor(None, lambda: fetch_oembed_title(video_id))
                 if oembed_title:
                     search_term = oembed_title
+                    print(f"[🔄] Fallback: Got title via oEmbed: {oembed_title}")
             if not search_term and not search.startswith(('http://', 'https://')):
                 search_term = search.strip()
 
             if search_term:
+                # Try YouTube search by title (search queries bypass bot detection)
+                try:
+                    yt_search_query = f"ytsearch1:{search_term}"
+                    partial_yt_fb = functools.partial(ytdl.extract_info, yt_search_query, download=False)
+                    data = await loop.run_in_executor(None, partial_yt_fb)
+                    if data and 'entries' in data and data['entries']:
+                        print(f"[✅] YouTube search fallback worked: {search_term}")
+                except Exception as yt_fb_err:
+                    print(f"[-] YouTube search fallback failed: {yt_fb_err}")
+
+            # Last resort: SoundCloud
+            if (not data or ('entries' in data and not data['entries'])) and search_term:
                 try:
                     fallback_query = f"scsearch1:{search_term}"
                     partial_fb = functools.partial(ytdl_fallback.extract_info, fallback_query, download=False)
                     data = await loop.run_in_executor(None, partial_fb)
+                    if data:
+                        print(f"[✅] SoundCloud fallback worked: {search_term}")
                 except Exception as fb_err:
-                    print(f"[-] Fallback search failed: {fb_err}")
+                    print(f"[-] SoundCloud fallback failed: {fb_err}")
 
         if data is None:
             raise YTDLError(f"Koi gaana nahi mila: `{search}`")
