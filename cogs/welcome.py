@@ -5,6 +5,16 @@ import asyncio
 import random
 import json
 import os
+import sys
+
+# Welcome card image generator
+try:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from utils.welcome_card import generate_welcome_card
+    CARD_AVAILABLE = True
+except Exception as e:
+    print(f"[!] Welcome card generator not available: {e}")
+    CARD_AVAILABLE = False
 
 WELCOME_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "welcome_config.json")
 
@@ -162,16 +172,57 @@ class Welcome(commands.Cog):
         if not welcome_ch:
             return
 
-        embed = self.build_welcome_embed(member)
+        # ── Generate Image Card ───────────────────────────────────────
+        card_file = None
+        if CARD_AVAILABLE:
+            try:
+                disc = getattr(member, 'discriminator', '0000') or '0000'
+                # Calculate time since account creation
+                import datetime
+                now = discord.utils.utcnow()
+                delta = now - member.created_at.replace(tzinfo=datetime.timezone.utc) if member.created_at.tzinfo is None else now - member.created_at
+                days = delta.days
+                if days < 1:
+                    joined_ago = "a few seconds ago"
+                elif days < 30:
+                    joined_ago = f"{days} day{'s' if days != 1 else ''} ago"
+                elif days < 365:
+                    joined_ago = f"{days // 30} month{'s' if days // 30 != 1 else ''} ago"
+                else:
+                    joined_ago = f"{days // 365} year{'s' if days // 365 != 1 else ''} ago"
 
-        # Build action row buttons
+                buf = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: generate_welcome_card(
+                        username=member.display_name,
+                        discriminator=disc,
+                        member_number=member.guild.member_count or 1,
+                        joined_ago=joined_ago,
+                        server_name=member.guild.name,
+                        avatar_url=str(member.display_avatar.with_size(256).url),
+                    )
+                )
+                card_file = discord.File(buf, filename="welcome.png")
+            except Exception as e:
+                print(f"[!] Welcome card generation failed: {e}")
+                card_file = None
+
+        # ── Send Message ─────────────────────────────────────────────
         view = WelcomeView(member)
 
-        msg = await welcome_ch.send(
-            content=f"🎉 **{member.mention}** ne server join kiya!",
-            embed=embed,
-            view=view
-        )
+        if card_file:
+            msg = await welcome_ch.send(
+                content=f"🎉 **{member.mention}** ne **{member.guild.name}** join kiya!",
+                file=card_file,
+                view=view
+            )
+        else:
+            embed = self.build_welcome_embed(member)
+            msg = await welcome_ch.send(
+                content=f"🎉 **{member.mention}** ne server join kiya!",
+                embed=embed,
+                view=view
+            )
 
         # Milestone check
         if self.config.get("show_milestone", True):
