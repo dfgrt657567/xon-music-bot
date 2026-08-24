@@ -3,6 +3,31 @@ from discord import app_commands
 from discord.ext import commands
 import asyncio
 import random
+import json
+import os
+
+WELCOME_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "welcome_config.json")
+
+def load_welcome_config() -> dict:
+    """Load welcome config from file, falling back to defaults."""
+    defaults = {
+        "message": "Server mein aapka swagat hai! 🎉 {member}",
+        "title": "👋 Welcome to {server}!",
+        "color": "#8B5CF6",
+        "show_avatar": True,
+        "show_banner": True,
+        "show_milestone": True,
+        "show_farewell": True,
+        "banner_image": None
+    }
+    if os.path.exists(WELCOME_CONFIG_PATH):
+        try:
+            with open(WELCOME_CONFIG_PATH, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+                defaults.update(cfg)
+        except Exception as e:
+            print(f"[!] Failed to load welcome_config.json: {e}")
+    return defaults
 
 
 # ── Welcome Banner Colors (rotate karein har baar) ───────────────────────────
@@ -38,6 +63,13 @@ class Welcome(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.config = load_welcome_config()
+        print(f"[🎉] Welcome cog loaded. Config: message='{self.config['message'][:30]}...'")
+
+    def reload_config(self):
+        """Hot-reload config from file (called by web dashboard)."""
+        self.config = load_welcome_config()
+        print(f"[🔄] Welcome config reloaded from web dashboard")
 
     def find_welcome_channel(self, guild: discord.Guild) -> discord.TextChannel | None:
         """Find the welcome channel by name."""
@@ -49,9 +81,14 @@ class Welcome(commands.Cog):
         return None
 
     def build_welcome_embed(self, member: discord.Member) -> discord.Embed:
-        color = random.choice(BANNER_COLORS)
-        greet = random.choice(GREET_MESSAGES)
+        cfg = self.config
         guild = member.guild
+
+        # Parse color from hex string
+        try:
+            color_int = int(cfg.get("color", "#8B5CF6").lstrip("#"), 16)
+        except Exception:
+            color_int = random.choice(BANNER_COLORS)
 
         # Member count ordinal
         count = guild.member_count
@@ -61,9 +98,21 @@ class Welcome(commands.Cog):
             elif count % 10 == 2: suffix = "nd"
             elif count % 10 == 3: suffix = "rd"
 
+        # Fill in placeholders
+        msg = cfg.get("message", "Server mein aapka swagat hai! {member}")
+        msg = msg.replace("{member}", member.mention)
+        msg = msg.replace("{server}", guild.name)
+        msg = msg.replace("{count}", str(count))
+
+        title = cfg.get("title", "👋 Welcome to {server}!")
+        title = title.replace("{member}", member.display_name)
+        title = title.replace("{server}", guild.name)
+        title = title.replace("{count}", str(count))
+
         embed = discord.Embed(
-            description=f"## 👋 Welcome, {member.mention}!\n{greet}",
-            color=color
+            title=title,
+            description=msg,
+            color=color_int
         )
 
         # Author line
@@ -72,34 +121,25 @@ class Welcome(commands.Cog):
             icon_url=member.display_avatar.url
         )
 
-        # Large avatar banner
-        embed.set_thumbnail(url=member.display_avatar.url)
+        # Avatar thumbnail
+        if cfg.get("show_avatar", True):
+            embed.set_thumbnail(url=member.display_avatar.url)
 
-        # Server banner if exists
-        if guild.banner:
+        # Custom banner image (from web dashboard upload)
+        banner_img = cfg.get("banner_image")
+        if banner_img and cfg.get("show_banner", True):
+            # If it's a relative path, skip (can't resolve to absolute URL here)
+            # Only set if it's a full URL
+            if banner_img.startswith("http"):
+                embed.set_image(url=banner_img)
+        elif cfg.get("show_banner", True) and guild.banner:
             embed.set_image(url=guild.banner.with_format("png").url)
 
         # Fields
-        embed.add_field(
-            name="👤 Member",
-            value=f"```{member.name}```",
-            inline=True
-        )
-        embed.add_field(
-            name="📅 Joined Discord",
-            value=f"<t:{int(member.created_at.timestamp())}:R>",
-            inline=True
-        )
-        embed.add_field(
-            name="🏅 You are",
-            value=f"```#{count} member ({count}{suffix})```",
-            inline=True
-        )
-        embed.add_field(
-            name="📋 Server Rules",
-            value="Please read the rules and enjoy your stay! 🎵",
-            inline=False
-        )
+        embed.add_field(name="👤 Member",       value=f"```{member.name}```",               inline=True)
+        embed.add_field(name="📅 Joined Discord", value=f"<t:{int(member.created_at.timestamp())}:R>", inline=True)
+        embed.add_field(name="🏅 You are",      value=f"```#{count} member ({count}{suffix})```", inline=True)
+        embed.add_field(name="📋 Server Rules",  value="Please read the rules and enjoy your stay! 🎵", inline=False)
 
         # Footer
         embed.set_footer(
@@ -134,19 +174,22 @@ class Welcome(commands.Cog):
         )
 
         # Milestone check
-        milestone = get_milestone_text(member.guild.member_count)
-        if milestone:
-            milestone_embed = discord.Embed(
-                title=f"🎊 Server Milestone Reached — {milestone}",
-                description=f"Congratulations **{member.guild.name}**! Aapne {milestone} ka milestone reach kar liya!\nAur yeh sab **{member.mention}** ki wajah se!",
-                color=0xFFD700
-            )
-            milestone_embed.set_thumbnail(url=member.guild.icon.url if member.guild.icon else None)
-            await welcome_ch.send(embed=milestone_embed)
+        if self.config.get("show_milestone", True):
+            milestone = get_milestone_text(member.guild.member_count)
+            if milestone:
+                milestone_embed = discord.Embed(
+                    title=f"🎊 Server Milestone Reached — {milestone}",
+                    description=f"Congratulations **{member.guild.name}**! Aapne {milestone} ka milestone reach kar liya!\nAur yeh sab **{member.mention}** ki wajah se!",
+                    color=0xFFD700
+                )
+                milestone_embed.set_thumbnail(url=member.guild.icon.url if member.guild.icon else None)
+                await welcome_ch.send(embed=milestone_embed)
 
     # ── on_member_remove Event (optional farewell) ───────────────────────────
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
+        if not self.config.get("show_farewell", True):
+            return
         welcome_ch = self.find_welcome_channel(member.guild)
         if not welcome_ch:
             return

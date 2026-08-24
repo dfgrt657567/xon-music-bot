@@ -2037,3 +2037,64 @@ h1, h2, h3, h4, h5, h6 {
   white-space: nowrap;
 }
 
+/* Upload Zone */
+.wc-upload-zone {
+  border: 2px dashed rgba(139,92,246,0.4);
+  border-radius: 12px;
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  background: rgba(139,92,246,0.04);
+}
+.wc-upload-zone:hover, .wc-upload-zone.drag-over {
+  border-color: var(--neon-purple);
+  background: rgba(139,92,246,0.1);
+  color: var(--text-primary);
+}
+.wc-upload-zone i { font-size: 28px; color: var(--neon-purple); margin-bottom: 4px; }
+.wc-upload-zone small { font-size: 11px; color: var(--text-muted); }
+
+/* Crop Container */
+.wc-crop-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  user-select: none;
+  background: #111;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.wc-crop-box {
+  position: absolute;
+  border: 2px solid var(--neon-purple);
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+  cursor: move;
+  border-radius: 2px;
+}
+.wc-crop-box::before, .wc-crop-box::after {
+  content: '';
+  position: absolute;
+  background: var(--neon-purple);
+  border-radius: 2px;
+}
+/* Resize handles */
+.wc-crop-handle {
+  position: absolute;
+  width: 10px; height: 10px;
+  background: white;
+  border: 2px solid var(--neon-purple);
+  border-radius: 2px;
+}
+.wc-crop-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+

@@ -143,6 +143,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 channels.insert(0, {"category": "General", "channels": sorted(uncategorized, key=lambda x: x["position"])})
             return self._send_json({"channels": channels, "user": {"id": user["id"], "username": user.get("global_name") or user["username"]}})
 
+        # ── API: Welcome Config (GET) ─────────────────────────────────
+        if self.path == "/api/welcome":
+            cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "welcome_config.json")
+            if os.path.exists(cfg_path):
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    return self._send_json(json.load(f))
+            return self._send_json({
+                "message": "Server mein aapka swagat hai! 🎉 {member}",
+                "title": "👋 Welcome to {server}!",
+                "color": "#8B5CF6",
+                "show_avatar": True,
+                "show_banner": True,
+                "show_milestone": True,
+                "show_farewell": True,
+                "banner_image": None
+            })
+
         # ── API: AntiSpam Config (GET) ────────────────────────────────
         if self.path == "/api/antispam/config":
             auth = self.headers.get("Authorization", "").replace("Bearer ", "")
@@ -160,6 +177,78 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
+        # ── API: Welcome Config (POST — save settings) ───────────────────
+        if self.path == "/api/welcome":
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                body = json.loads(self.rfile.read(length).decode("utf-8"))
+                cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "welcome_config.json")
+                # Reload existing config and merge
+                cfg = {}
+                if os.path.exists(cfg_path):
+                    with open(cfg_path, "r", encoding="utf-8") as f:
+                        cfg = json.load(f)
+                cfg.update({
+                    "message":          body.get("message", cfg.get("message", "{member} server join kiya!")),
+                    "title":            body.get("title", cfg.get("title", "👋 Welcome!")),
+                    "color":            body.get("color", cfg.get("color", "#8B5CF6")),
+                    "show_avatar":      body.get("show_avatar", cfg.get("show_avatar", True)),
+                    "show_banner":      body.get("show_banner", cfg.get("show_banner", True)),
+                    "show_milestone":   body.get("show_milestone", cfg.get("show_milestone", True)),
+                    "show_farewell":    body.get("show_farewell", cfg.get("show_farewell", True)),
+                    "banner_image":     body.get("banner_image", cfg.get("banner_image", None)),
+                })
+                with open(cfg_path, "w", encoding="utf-8") as f:
+                    json.dump(cfg, f, indent=2, ensure_ascii=False)
+                # Notify the Welcome cog to reload
+                if bot_instance:
+                    cog = bot_instance.cogs.get("Welcome")
+                    if cog and hasattr(cog, "reload_config"):
+                        cog.reload_config()
+                print(f"[✅] Welcome config updated via web dashboard")
+                return self._send_json({"success": True})
+            except Exception as e:
+                print(f"[!] Welcome config save error: {e}")
+                return self._send_json({"error": str(e)}, 500)
+
+        # ── API: Welcome Banner Image Upload (POST base64 image) ─────────
+        if self.path == "/api/welcome/upload":
+            try:
+                import base64, re as _re
+                length = int(self.headers.get("Content-Length", 0))
+                body = json.loads(self.rfile.read(length).decode("utf-8"))
+                image_data = body.get("image", "")
+                # Strip data URL prefix if present: data:image/png;base64,...
+                match = _re.match(r"data:image/(\w+);base64,(.*)", image_data, _re.DOTALL)
+                if match:
+                    ext = match.group(1)
+                    raw_b64 = match.group(2)
+                else:
+                    ext = "png"
+                    raw_b64 = image_data
+                img_bytes = base64.b64decode(raw_b64)
+                # Save to web/uploads/welcome_banner.{ext}
+                uploads_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "uploads")
+                os.makedirs(uploads_dir, exist_ok=True)
+                img_path = os.path.join(uploads_dir, f"welcome_banner.{ext}")
+                with open(img_path, "wb") as f:
+                    f.write(img_bytes)
+                # Save URL in config
+                banner_url = f"/uploads/welcome_banner.{ext}"
+                cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "welcome_config.json")
+                cfg = {}
+                if os.path.exists(cfg_path):
+                    with open(cfg_path, "r", encoding="utf-8") as f:
+                        cfg = json.load(f)
+                cfg["banner_image"] = banner_url
+                with open(cfg_path, "w", encoding="utf-8") as f:
+                    json.dump(cfg, f, indent=2, ensure_ascii=False)
+                print(f"[🖼️] Welcome banner uploaded: {banner_url}")
+                return self._send_json({"success": True, "url": banner_url})
+            except Exception as e:
+                print(f"[!] Welcome image upload error: {e}")
+                return self._send_json({"error": str(e)}, 500)
+
         # ── API: Clear Messages ──────────────────────────────────────────
         if self.path == "/api/clear":
             try:

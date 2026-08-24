@@ -554,12 +554,52 @@
             </div>
           </div>
 
+          <div class="ws-section">
+            <h4><i class="fa-solid fa-image"></i> Welcome Banner Image</h4>
+            <p class="ws-hint">Image upload karein — select karein aur crop karein!</p>
+
+            <!-- Upload drop zone -->
+            <div class="wc-upload-zone" id="wcUploadZone">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Image drag karein ya <strong>click karein</strong> upload ke liye</span>
+              <small>PNG, JPG, GIF • Max 4MB</small>
+              <input type="file" id="wcImageFileInput" accept="image/*" style="display:none">
+            </div>
+
+            <!-- Crop preview area (hidden until image selected) -->
+            <div id="wcCropArea" style="display:none; margin-top:12px;">
+              <div class="wc-crop-container">
+                <canvas id="wcSourceCanvas" style="max-width:100%; border-radius:8px; display:block;"></canvas>
+                <div id="wcCropBox" class="wc-crop-box"></div>
+              </div>
+              <div class="wc-crop-controls">
+                <button id="wcCropApplyBtn" class="btn btn-primary btn-sm">
+                  <i class="fa-solid fa-scissors"></i> Apply Crop
+                </button>
+                <button id="wcCropResetBtn" class="btn btn-glass btn-sm">
+                  <i class="fa-solid fa-rotate-left"></i> Reset
+                </button>
+              </div>
+              <!-- Cropped preview -->
+              <div id="wcCroppedPreview" style="display:none; margin-top:10px;">
+                <p class="ws-hint">Cropped result:</p>
+                <img id="wcCroppedImg" style="max-width:100%; border-radius:8px; max-height:150px; object-fit:cover;">
+                <button id="wcRemoveBannerBtn" class="btn btn-glass btn-sm" style="margin-top:8px;">
+                  <i class="fa-solid fa-trash"></i> Remove Image
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="ws-actions">
-            <button id="wcTestBtn" class="btn btn-primary btn-glow">
-              <i class="fa-solid fa-paper-plane"></i> Test in Discord
+            <button id="wcSaveBtn" class="btn btn-primary btn-glow">
+              <i class="fa-solid fa-floppy-disk"></i> Save to Discord
+            </button>
+            <button id="wcTestBtn" class="btn btn-glass">
+              <i class="fa-solid fa-paper-plane"></i> Test Welcome
             </button>
             <button id="wcCopyCmd" class="btn btn-glass">
-              <i class="fa-solid fa-copy"></i> Copy Command
+              <i class="fa-solid fa-copy"></i> Copy Cmd
             </button>
           </div>
         </div>
@@ -770,31 +810,207 @@
     if (showAvatar) showAvatar.addEventListener('change', updatePreview);
     if (showBanner) showBanner.addEventListener('change', updatePreview);
 
-    // Color presets
-    document.querySelectorAll('.color-preset').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const c = btn.dataset.color;
-        if (colorPicker) colorPicker.value = c;
-        updatePreview();
-      });
-    });
+    // ── Image Upload + Crop ──────────────────────────────────────────
+    const uploadZone   = document.getElementById('wcUploadZone');
+    const fileInput    = document.getElementById('wcImageFileInput');
+    const cropArea     = document.getElementById('wcCropArea');
+    const sourceCanvas = document.getElementById('wcSourceCanvas');
+    const cropBox      = document.getElementById('wcCropBox');
+    const cropApplyBtn = document.getElementById('wcCropApplyBtn');
+    const cropResetBtn = document.getElementById('wcCropResetBtn');
+    const croppedPreview = document.getElementById('wcCroppedPreview');
+    const croppedImg   = document.getElementById('wcCroppedImg');
+    const removeBannerBtn = document.getElementById('wcRemoveBannerBtn');
 
-    // Message presets
-    document.querySelectorAll('.wc-preset-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (msgInput) { msgInput.value = btn.dataset.msg; updatePreview(); }
+    let sourceImage = null;
+    let croppedDataURL = null;
+
+    // Crop box state
+    let cb = { x: 20, y: 20, w: 200, h: 120 };
+    let dragging = false;
+    let dragStart = {};
+
+    if (uploadZone) {
+      uploadZone.addEventListener('click', () => fileInput && fileInput.click());
+      uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+      uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+      uploadZone.addEventListener('drop', e => {
+        e.preventDefault(); uploadZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) loadImageFile(file);
       });
+    }
+    if (fileInput) fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadImageFile(fileInput.files[0]); });
+
+    function loadImageFile(file) {
+      if (file.size > 4 * 1024 * 1024) { showToast('Image 4MB se badi hai!', 'error'); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        sourceImage = new Image();
+        sourceImage.onload = () => {
+          drawSourceCanvas();
+          cropArea.style.display = 'block';
+          croppedPreview.style.display = 'none';
+          croppedDataURL = null;
+          // Init crop box to center
+          const cw = sourceCanvas.width, ch = sourceCanvas.height;
+          cb = { x: Math.floor(cw*0.1), y: Math.floor(ch*0.1), w: Math.floor(cw*0.8), h: Math.floor(ch*0.8) };
+          drawCropOverlay();
+        };
+        sourceImage.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function drawSourceCanvas() {
+      if (!sourceImage || !sourceCanvas) return;
+      const maxW = sourceCanvas.parentElement.offsetWidth || 400;
+      const scale = Math.min(maxW / sourceImage.width, 300 / sourceImage.height, 1);
+      sourceCanvas.width  = Math.round(sourceImage.width  * scale);
+      sourceCanvas.height = Math.round(sourceImage.height * scale);
+      const ctx = sourceCanvas.getContext('2d');
+      ctx.drawImage(sourceImage, 0, 0, sourceCanvas.width, sourceCanvas.height);
+    }
+
+    function drawCropOverlay() {
+      if (!cropBox || !sourceCanvas) return;
+      const rect = sourceCanvas.getBoundingClientRect();
+      const containerRect = sourceCanvas.parentElement.getBoundingClientRect();
+      const ox = rect.left - containerRect.left;
+      const oy = rect.top  - containerRect.top;
+      cropBox.style.left   = (ox + cb.x) + 'px';
+      cropBox.style.top    = (oy + cb.y) + 'px';
+      cropBox.style.width  = cb.w + 'px';
+      cropBox.style.height = cb.h + 'px';
+    }
+
+    // Drag to move crop box
+    if (cropBox) {
+      cropBox.addEventListener('mousedown', e => {
+        dragging = true;
+        dragStart = { mx: e.clientX, my: e.clientY, cx: cb.x, cy: cb.y };
+        e.preventDefault();
+      });
+    }
+    document.addEventListener('mousemove', e => {
+      if (!dragging || !sourceCanvas) return;
+      const dx = e.clientX - dragStart.mx;
+      const dy = e.clientY - dragStart.my;
+      cb.x = Math.max(0, Math.min(dragStart.cx + dx, sourceCanvas.width  - cb.w));
+      cb.y = Math.max(0, Math.min(dragStart.cy + dy, sourceCanvas.height - cb.h));
+      drawCropOverlay();
     });
+    document.addEventListener('mouseup', () => { dragging = false; });
+
+    // Apply crop
+    if (cropApplyBtn) {
+      cropApplyBtn.addEventListener('click', () => {
+        if (!sourceImage || !sourceCanvas) return;
+        const scaleX = sourceImage.width  / sourceCanvas.width;
+        const scaleY = sourceImage.height / sourceCanvas.height;
+        const tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width  = Math.round(cb.w * scaleX);
+        tmpCanvas.height = Math.round(cb.h * scaleY);
+        const ctx = tmpCanvas.getContext('2d');
+        ctx.drawImage(sourceImage,
+          Math.round(cb.x * scaleX), Math.round(cb.y * scaleY),
+          tmpCanvas.width, tmpCanvas.height,
+          0, 0, tmpCanvas.width, tmpCanvas.height
+        );
+        croppedDataURL = tmpCanvas.toDataURL('image/png');
+        if (croppedImg) croppedImg.src = croppedDataURL;
+        croppedPreview.style.display = 'block';
+        showToast('✂️ Image cropped! Save karein Discord pe bhejne ke liye.', 'success');
+      });
+    }
+
+    if (cropResetBtn) {
+      cropResetBtn.addEventListener('click', () => {
+        cb = { x: 20, y: 20, w: sourceCanvas.width - 40, h: sourceCanvas.height - 40 };
+        drawCropOverlay();
+        croppedPreview.style.display = 'none';
+        croppedDataURL = null;
+      });
+    }
+
+    if (removeBannerBtn) {
+      removeBannerBtn.addEventListener('click', () => {
+        croppedDataURL = null;
+        cropArea.style.display = 'none';
+        croppedPreview.style.display = 'none';
+        if (fileInput) fileInput.value = '';
+        showToast('🗑️ Banner image removed.', 'info');
+      });
+    }
+
+    // ── Save to Discord ───────────────────────────────────────────────
+    const wcSaveBtn = document.getElementById('wcSaveBtn');
+    if (wcSaveBtn) {
+      wcSaveBtn.addEventListener('click', async () => {
+        wcSaveBtn.disabled = true;
+        wcSaveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+        let bannerUrl = null;
+        if (croppedDataURL) {
+          try {
+            const upRes = await fetch('/api/welcome/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ image: croppedDataURL })
+            });
+            const upData = await upRes.json();
+            if (upData.success) bannerUrl = upData.url;
+          } catch(e) { console.warn('Image upload failed:', e); }
+        }
+
+        try {
+          const payload = {
+            message: msgInput ? msgInput.value : '',
+            title: titleInput ? titleInput.value : '',
+            color: colorPicker ? colorPicker.value : '#8B5CF6',
+            show_avatar: showAvatar ? showAvatar.checked : true,
+            show_banner: showBanner ? showBanner.checked : true
+          };
+          if (bannerUrl !== null) payload.banner_image = bannerUrl;
+
+          const res = await fetch('/api/welcome', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('✅ Welcome settings saved!', 'success');
+          } else {
+            showToast('❌ Save failed: ' + (data.error || 'Error'), 'error');
+          }
+        } catch(e) { showToast('❌ Server error.', 'error'); }
+
+        wcSaveBtn.disabled = false;
+        wcSaveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save to Discord';
+      });
+    }
+
+    // ── Load saved config ───────────────────────
+    (async function loadSavedConfig() {
+      try {
+        const res = await fetch('/api/welcome');
+        if (!res.ok) return;
+        const cfg = await res.json();
+        if (msgInput   && cfg.message) msgInput.value   = cfg.message;
+        if (titleInput && cfg.title)   titleInput.value = cfg.title;
+        if (colorPicker && cfg.color)  colorPicker.value = cfg.color;
+        if (showAvatar && cfg.show_avatar !== undefined) showAvatar.checked = cfg.show_avatar;
+        if (showBanner && cfg.show_banner !== undefined) showBanner.checked = cfg.show_banner;
+        updatePreview();
+      } catch(e) {}
+    })();
 
     // Test button
     if (wcTestBtn) {
       wcTestBtn.addEventListener('click', () => {
-        const isLoggedIn = !!sessionStorage.getItem('discord_user');
-        if (!isLoggedIn) {
-          showToast('Discord login karein pehle! 🔐', 'warning');
-          return;
-        }
-        showToast('✅ Test welcome message Discord mein bheja gaya! Check karein #welcome channel.', 'success');
+        showToast('Discord pe /testwelcome command use karein! 📨', 'info');
+        navigator.clipboard.writeText('/testwelcome');
       });
     }
 
