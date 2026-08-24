@@ -307,13 +307,32 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
         # ── YouTube / Text Search ───────────────────────────────────────────────
         # 1. Primary extraction
+        data = None
         try:
             partial_extract = functools.partial(ytdl.extract_info, query, download=False)
             data = await loop.run_in_executor(None, partial_extract)
         except Exception as primary_err:
             print(f"[!] Primary extraction failed on {query}: {primary_err}")
 
-        # 2. Resilient fallback (oEmbed title + SoundCloud)
+            # 2. Retry with different YouTube client if bot detection
+            if 'Sign in to confirm' in str(primary_err) or 'bot' in str(primary_err).lower():
+                print("[!] YouTube bot detection — retrying with android client...")
+                try:
+                    retry_ytdl = youtube_dl.YoutubeDL({
+                        **ytdl_format_options,
+                        'extractor_args': {
+                            'youtube': {
+                                'player_client': ['android', 'ios', 'tv'],
+                                'player_skip': ['web', 'web_creator', 'mweb'],
+                            }
+                        }
+                    })
+                    partial_retry = functools.partial(retry_ytdl.extract_info, query, download=False)
+                    data = await loop.run_in_executor(None, partial_retry)
+                except Exception as retry_err:
+                    print(f"[!] Retry extraction also failed: {retry_err}")
+
+        # 3. Resilient fallback (oEmbed title + SoundCloud)
         if not data or ('entries' in data and not data['entries']):
             search_term = None
             if video_id:
