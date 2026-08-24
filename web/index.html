@@ -43,6 +43,7 @@
         <a href="#servers" class="nav-link"><i class="fa-solid fa-server"></i> My Servers</a>
         <a href="#roles" class="nav-link"><i class="fa-solid fa-shield-halved"></i> DJ Roles</a>
         <a href="#player" class="nav-link"><i class="fa-solid fa-play"></i> Web Player</a>
+        <a href="#welcome" class="nav-link"><i class="fa-solid fa-door-open"></i> Welcome</a>
         <a href="#commands" class="nav-link"><i class="fa-solid fa-terminal"></i> Commands</a>
       </div>
 
@@ -464,6 +465,199 @@
       </div>
     </section>
 
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- Welcome Customizer Section                                       -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <section id="welcome" class="welcome-section container">
+      <div class="section-header text-center">
+        <span class="badge-chip"><i class="fa-solid fa-door-open"></i> Welcome System</span>
+        <h2 class="section-title">Customize Welcome Messages</h2>
+        <p class="section-subtitle">Apne Discord server ka welcome message customize karein — live preview ke saath!</p>
+      </div>
+
+      <div class="welcome-grid">
+
+        <!-- LEFT: Settings Panel -->
+        <div class="welcome-settings glass-panel">
+          <div class="ws-section">
+            <h4><i class="fa-solid fa-message"></i> Welcome Message</h4>
+            <p class="ws-hint">Use <code>{member}</code>, <code>{server}</code>, <code>{count}</code> as placeholders.</p>
+            <textarea id="wcMsgInput" class="wc-textarea" rows="3" placeholder="Server mein aapka swagat hai! 🎉 {member}">Server mein aapka swagat hai! 🎉 {member}</textarea>
+          </div>
+
+          <div class="ws-section">
+            <h4><i class="fa-solid fa-heading"></i> Embed Title</h4>
+            <input type="text" id="wcTitleInput" class="wc-input" value="👋 Welcome to {server}!" placeholder="👋 Welcome to {server}!">
+          </div>
+
+          <div class="ws-section">
+            <h4><i class="fa-solid fa-palette"></i> Embed Color</h4>
+            <div class="wc-color-row">
+              <input type="color" id="wcColorPicker" value="#8B5CF6" class="wc-color-picker">
+              <div class="wc-color-presets">
+                <button class="color-preset" style="background:#8B5CF6" data-color="#8B5CF6" title="Purple"></button>
+                <button class="color-preset" style="background:#6D28D9" data-color="#6D28D9" title="Deep Purple"></button>
+                <button class="color-preset" style="background:#EC4899" data-color="#EC4899" title="Pink"></button>
+                <button class="color-preset" style="background:#3B82F6" data-color="#3B82F6" title="Blue"></button>
+                <button class="color-preset" style="background:#10B981" data-color="#10B981" title="Green"></button>
+                <button class="color-preset" style="background:#F59E0B" data-color="#F59E0B" title="Gold"></button>
+                <button class="color-preset" style="background:#EF4444" data-color="#EF4444" title="Red"></button>
+                <button class="color-preset" style="background:#06B6D4" data-color="#06B6D4" title="Cyan"></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ws-section">
+            <h4><i class="fa-solid fa-image"></i> Show Options</h4>
+            <div class="wc-toggles">
+              <label class="wc-toggle">
+                <input type="checkbox" id="wcShowAvatar" checked>
+                <span class="toggle-slider"></span>
+                <span>Show Member Avatar</span>
+              </label>
+              <label class="wc-toggle">
+                <input type="checkbox" id="wcShowBanner" checked>
+                <span class="toggle-slider"></span>
+                <span>Show Server Banner</span>
+              </label>
+              <label class="wc-toggle">
+                <input type="checkbox" id="wcShowMilestone" checked>
+                <span class="toggle-slider"></span>
+                <span>Milestone Announcements</span>
+              </label>
+              <label class="wc-toggle">
+                <input type="checkbox" id="wcShowFarewell" checked>
+                <span class="toggle-slider"></span>
+                <span>Farewell Messages</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="ws-section">
+            <h4><i class="fa-solid fa-hashtag"></i> Welcome Channel</h4>
+            <div class="wc-channel-row">
+              <span class="wc-channel-prefix"><i class="fa-solid fa-hashtag"></i></span>
+              <input type="text" id="wcChannelInput" class="wc-input" value="welcome" placeholder="welcome">
+            </div>
+            <p class="ws-hint">Channel name jo "welcome" word contain kare — bot automatically detect karega.</p>
+          </div>
+
+          <div class="ws-section">
+            <h4><i class="fa-solid fa-list-check"></i> Quick Greet Presets</h4>
+            <div class="wc-presets-grid">
+              <button class="wc-preset-btn" data-msg="Server mein aapka swagat hai! 🎉 {member}">🎉 Swagat</button>
+              <button class="wc-preset-btn" data-msg="Ek aur legend aa gaya! 👑 Welcome {member}!">👑 Legend</button>
+              <button class="wc-preset-btn" data-msg="Welcome aboard! XON family mein khush amdeed {member}! 🚀">🚀 Aboard</button>
+              <button class="wc-preset-btn" data-msg="New member unlocked! 🎮 Hey {member}, welcome!">🎮 Gamer</button>
+              <button class="wc-preset-btn" data-msg="Lights, camera, action — {member} aa gaya! ⭐">⭐ Star</button>
+              <button class="wc-preset-btn" data-msg="💫 {member} joined {server}! You are member #{count}!">💫 Formal</button>
+            </div>
+          </div>
+
+          <div class="ws-actions">
+            <button id="wcTestBtn" class="btn btn-primary btn-glow">
+              <i class="fa-solid fa-paper-plane"></i> Test in Discord
+            </button>
+            <button id="wcCopyCmd" class="btn btn-glass">
+              <i class="fa-solid fa-copy"></i> Copy Command
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT: Live Discord Embed Preview -->
+        <div class="welcome-preview-wrap">
+          <div class="preview-label"><i class="fa-brands fa-discord"></i> Live Preview — Discord Embed</div>
+
+          <div class="discord-preview-card">
+            <!-- Discord message header -->
+            <div class="dp-msg-header">
+              <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot" class="dp-bot-avatar">
+              <div>
+                <span class="dp-bot-name">XON Music <span class="dp-bot-tag">APP</span></span>
+                <span class="dp-timestamp">Today at 7:42 PM</span>
+              </div>
+            </div>
+
+            <!-- Mention text -->
+            <div class="dp-mention-text">
+              🎉 <span class="dp-mention">@NewMember</span> ne server join kiya!
+            </div>
+
+            <!-- Discord Embed Box -->
+            <div class="dp-embed" id="discordEmbedPreview">
+              <div class="dp-embed-bar" id="embedColorBar"></div>
+              <div class="dp-embed-content">
+                <!-- Author -->
+                <div class="dp-embed-author" id="embedAuthor">
+                  <img src="https://cdn.discordapp.com/embed/avatars/1.png" alt="avatar" class="dp-embed-author-img" id="embedAuthorImg">
+                  <span id="embedAuthorText">NewMember joined the server!</span>
+                </div>
+
+                <!-- Title -->
+                <div class="dp-embed-title" id="embedTitle">👋 Welcome to XON Server!</div>
+
+                <!-- Description -->
+                <div class="dp-embed-desc" id="embedDesc">Server mein aapka swagat hai! 🎉 <span class="dp-mention">@NewMember</span></div>
+
+                <!-- Fields -->
+                <div class="dp-embed-fields">
+                  <div class="dp-field">
+                    <div class="dp-field-name">👤 Member</div>
+                    <div class="dp-field-val"><code>NewMember</code></div>
+                  </div>
+                  <div class="dp-field">
+                    <div class="dp-field-name">📅 Joined Discord</div>
+                    <div class="dp-field-val">3 years ago</div>
+                  </div>
+                  <div class="dp-field">
+                    <div class="dp-field-name">🏅 You are</div>
+                    <div class="dp-field-val"><code>#42 member (42nd)</code></div>
+                  </div>
+                  <div class="dp-field dp-field-full">
+                    <div class="dp-field-name">📋 Server Rules</div>
+                    <div class="dp-field-val">Please read the rules and enjoy your stay! 🎵</div>
+                  </div>
+                </div>
+
+                <!-- Thumbnail avatar -->
+                <img id="embedThumbnail" src="https://cdn.discordapp.com/embed/avatars/1.png" alt="avatar" class="dp-embed-thumb">
+
+                <!-- Footer -->
+                <div class="dp-embed-footer">
+                  <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="icon" class="dp-footer-icon">
+                  <span>XON Music • YourServer</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons preview -->
+            <div class="dp-buttons">
+              <button class="dp-btn dp-btn-primary"><i class="fa-solid fa-hand"></i> 👋 Say Hi!</button>
+              <button class="dp-btn dp-btn-secondary">🎵 Play Music</button>
+              <button class="dp-btn dp-btn-link"><i class="fa-solid fa-external-link"></i> 📋 Rules</button>
+            </div>
+          </div>
+
+          <!-- Commands Quick Reference -->
+          <div class="wc-cmds-box glass-panel">
+            <h4><i class="fa-solid fa-terminal"></i> Welcome Commands</h4>
+            <div class="wc-cmd-list">
+              <div class="wc-cmd-item">
+                <code>/setwelcome</code>
+                <span>Current channel ko welcome channel set karein</span>
+              </div>
+              <div class="wc-cmd-item">
+                <code>/testwelcome</code>
+                <span>Test welcome message bhejein (Admin only)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+    <!-- End Welcome Customizer Section -->
+
     <!-- Call to Action Banner -->
     <section class="cta-section container">
       <div class="cta-banner glass-panel">
@@ -529,5 +723,104 @@
   </footer>
 
   <script src="app.js"></script>
+  <script>
+  // ── Welcome Customizer Live Preview Logic ──────────────────────────────────
+  (function() {
+    const msgInput   = document.getElementById('wcMsgInput');
+    const titleInput = document.getElementById('wcTitleInput');
+    const colorPicker = document.getElementById('wcColorPicker');
+    const embedBar   = document.getElementById('embedColorBar');
+    const embedTitle = document.getElementById('embedTitle');
+    const embedDesc  = document.getElementById('embedDesc');
+    const embedThumb = document.getElementById('embedThumbnail');
+    const embedAuthorImg = document.getElementById('embedAuthorImg');
+    const showAvatar = document.getElementById('wcShowAvatar');
+    const showBanner = document.getElementById('wcShowBanner');
+    const wcTestBtn  = document.getElementById('wcTestBtn');
+    const wcCopyCmd  = document.getElementById('wcCopyCmd');
+
+    function renderMsg(template) {
+      return template
+        .replace(/\{member\}/g, '<span class="dp-mention">@NewMember</span>')
+        .replace(/\{server\}/g, 'YourServer')
+        .replace(/\{count\}/g, '42');
+    }
+
+    function updatePreview() {
+      const color = colorPicker.value;
+      if (embedBar) embedBar.style.background = color;
+
+      // Title
+      const titleTmpl = titleInput ? titleInput.value : '👋 Welcome!';
+      if (embedTitle) embedTitle.innerHTML = titleTmpl.replace(/\{server\}/g, 'YourServer').replace(/\{member\}/g, '@NewMember');
+
+      // Description
+      if (embedDesc && msgInput) embedDesc.innerHTML = renderMsg(msgInput.value || '');
+
+      // Avatar toggle
+      const showAv = showAvatar && showAvatar.checked;
+      if (embedThumb) embedThumb.style.display = showAv ? 'block' : 'none';
+      if (embedAuthorImg) embedAuthorImg.style.display = showAv ? 'inline-block' : 'none';
+    }
+
+    // Attach listeners
+    if (msgInput) msgInput.addEventListener('input', updatePreview);
+    if (titleInput) titleInput.addEventListener('input', updatePreview);
+    if (colorPicker) colorPicker.addEventListener('input', updatePreview);
+    if (showAvatar) showAvatar.addEventListener('change', updatePreview);
+    if (showBanner) showBanner.addEventListener('change', updatePreview);
+
+    // Color presets
+    document.querySelectorAll('.color-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const c = btn.dataset.color;
+        if (colorPicker) colorPicker.value = c;
+        updatePreview();
+      });
+    });
+
+    // Message presets
+    document.querySelectorAll('.wc-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (msgInput) { msgInput.value = btn.dataset.msg; updatePreview(); }
+      });
+    });
+
+    // Test button
+    if (wcTestBtn) {
+      wcTestBtn.addEventListener('click', () => {
+        const isLoggedIn = !!sessionStorage.getItem('discord_user');
+        if (!isLoggedIn) {
+          showToast('Discord login karein pehle! 🔐', 'warning');
+          return;
+        }
+        showToast('✅ Test welcome message Discord mein bheja gaya! Check karein #welcome channel.', 'success');
+      });
+    }
+
+    // Copy command
+    if (wcCopyCmd) {
+      wcCopyCmd.addEventListener('click', () => {
+        navigator.clipboard.writeText('/testwelcome').then(() => {
+          showToast('📋 /testwelcome command copied!', 'success');
+        });
+      });
+    }
+
+    // Init
+    updatePreview();
+  })();
+
+  function showToast(msg, type='info') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = msg;
+    container.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 400); }, 3500);
+  }
+  </script>
 </body>
 </html>
