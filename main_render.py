@@ -83,6 +83,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self._send_cors_preflight()
 
     def do_GET(self):
+        # ── API: All Bot Guilds (public) ─────────────────────────────────
+        if self.path == "/api/guilds":
+            if not bot_instance:
+                return self._send_json({"error": "Bot not ready"}, 503)
+            guilds_data = []
+            for g in bot_instance.guilds:
+                icon = f"https://cdn.discordapp.com/icons/{g.id}/{g.icon}.png?size=128" if g.icon else None
+                guilds_data.append({
+                    "id": str(g.id),
+                    "name": g.name,
+                    "icon": icon,
+                    "member_count": g.member_count,
+                    "owner_id": str(g.owner_id),
+                })
+            return self._send_json({"guilds": guilds_data, "total": len(guilds_data)})
+
         # ── API: Guild Info ──────────────────────────────────────────────
         if self.path == "/api/guild":
             if not bot_instance or not XON_GUILD_ID:
@@ -98,6 +114,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 "member_count": guild.member_count,
                 "owner_id": str(guild.owner_id)
             })
+
 
         # ── API: Channels List ──────────────────────────────────────────
         if self.path == "/api/channels":

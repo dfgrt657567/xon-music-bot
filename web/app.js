@@ -181,39 +181,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Render Server Cards in "My Servers" section
-  function renderServersDashboard() {
+  // Render Server Cards — auto load from bot API (no login required)
+  async function renderServersDashboard() {
     if (!serversLoggedOutBanner || !serversLoggedInGrid) return;
 
-    if (!currentUser) {
-      serversLoggedOutBanner.style.display = 'block';
-      serversLoggedInGrid.style.display = 'none';
-      return;
-    }
-
+    // Always show bot's servers grid, hide login banner
     serversLoggedOutBanner.style.display = 'none';
     serversLoggedInGrid.style.display = 'grid';
+
+    // Show loading skeleton first
+    serversLoggedInGrid.innerHTML = `
+      <div class="server-card glass-panel" style="opacity:0.5; animation: pulse 1.2s infinite alternate;">
+        <div class="server-card-top"><div class="server-avatar-placeholder" style="background:rgba(255,255,255,0.05)"></div><div style="flex:1"><div style="height:14px;background:rgba(255,255,255,0.07);border-radius:6px;margin-bottom:8px"></div><div style="height:10px;background:rgba(255,255,255,0.05);border-radius:6px;width:60%"></div></div></div>
+      </div>
+      <div class="server-card glass-panel" style="opacity:0.5; animation: pulse 1.4s infinite alternate;">
+        <div class="server-card-top"><div class="server-avatar-placeholder" style="background:rgba(255,255,255,0.05)"></div><div style="flex:1"><div style="height:14px;background:rgba(255,255,255,0.07);border-radius:6px;margin-bottom:8px"></div><div style="height:10px;background:rgba(255,255,255,0.05);border-radius:6px;width:60%"></div></div></div>
+      </div>
+    `;
+
+    // Fetch bot's own servers
+    let botGuilds = [];
+    try {
+      const res = await fetch('/api/guilds');
+      if (res.ok) {
+        const data = await res.json();
+        botGuilds = data.guilds || [];
+      }
+    } catch (e) {
+      console.warn('Could not fetch bot guilds:', e);
+    }
+
     serversLoggedInGrid.innerHTML = '';
 
-    if (userGuilds.length === 0) {
+    if (botGuilds.length === 0) {
       serversLoggedInGrid.innerHTML = `
         <div class="glass-panel text-center" style="grid-column: 1 / -1; padding: 40px;">
           <i class="fa-solid fa-server text-purple" style="font-size: 2rem; margin-bottom: 12px;"></i>
-          <h3>No Servers Found</h3>
-          <p style="color: var(--text-secondary); margin-bottom: 20px;">You are not currently in any Discord servers with Manage Server permissions.</p>
-          <a href="${BOT_INVITE_URL}" target="_blank" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Create / Invite to a Server</a>
+          <h3>Bot Not Connected</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 20px;">Bot abhi kisi server mein nahi hai ya deploy nahi hua.</p>
+          <a href="${BOT_INVITE_URL}" target="_blank" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add to Your Server</a>
         </div>
       `;
       return;
     }
 
-    userGuilds.forEach(guild => {
+    botGuilds.forEach(guild => {
       const inviteGuildUrl = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&permissions=8&scope=bot%20applications.commands&guild_id=${guild.id}`;
       const card = document.createElement('div');
       card.className = 'server-card glass-panel';
 
       const avatarHtml = guild.icon
-        ? `<img src="${guild.icon}" class="server-avatar" alt="icon">`
+        ? `<img src="${guild.icon}" class="server-avatar" alt="icon" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="server-avatar-placeholder" style="display:none">${guild.name.charAt(0).toUpperCase()}</div>`
         : `<div class="server-avatar-placeholder">${guild.name.charAt(0).toUpperCase()}</div>`;
 
       card.innerHTML = `
@@ -221,18 +239,18 @@ document.addEventListener('DOMContentLoaded', () => {
           ${avatarHtml}
           <div class="server-meta">
             <h4>${guild.name}</h4>
-            <span class="server-perm-badge">${guild.owner ? '👑 Owner' : (guild.canManage ? '🛡️ Admin / DJ' : '👤 Member')}</span>
+            <span class="server-perm-badge"><i class="fa-solid fa-users"></i> ${guild.member_count?.toLocaleString() || '?'} members</span>
           </div>
         </div>
 
         <div class="server-card-bot-status">
           <span><i class="fa-solid fa-compact-disc text-purple"></i> Music Engine:</span>
-          <strong class="text-success"><i class="fa-solid fa-circle-check"></i> Connected</strong>
+          <strong class="text-success"><i class="fa-solid fa-circle-check"></i> Active</strong>
         </div>
 
         <div class="server-actions">
           <a href="${inviteGuildUrl}" target="_blank" class="btn btn-secondary btn-sm" style="flex: 1;">
-            <i class="fa-solid fa-plus"></i> Invite / Add
+            <i class="fa-solid fa-plus"></i> Add / Reinvite
           </a>
           <button class="btn btn-primary btn-sm btn-manage-music" data-guild="${guild.name}" style="flex: 1;">
             <i class="fa-solid fa-play"></i> Web Player
@@ -241,6 +259,12 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       serversLoggedInGrid.appendChild(card);
     });
+
+    // Add footer note
+    const note = document.createElement('div');
+    note.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 12px; color: var(--text-muted); font-size: 13px;';
+    note.innerHTML = `<i class="fa-solid fa-compact-disc text-purple"></i> <strong>${botGuilds.length}</strong> servers mein XON Music active hai`;
+    serversLoggedInGrid.appendChild(note);
 
     document.querySelectorAll('.btn-manage-music').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -251,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
 
   // DJ Role Settings
   if (customDJRoleInput) {
